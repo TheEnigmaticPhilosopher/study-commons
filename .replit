@@ -1,0 +1,7 @@
+run = "node server.js"
+entrypoint = "server.js"
+modules = ["nodejs-22"]
+
+[deployment]
+run = ["node", "server.js"]
+deploymentTarget = "cloudrun"

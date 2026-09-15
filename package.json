@@ -1,0 +1,14 @@
+{
+  "name": "study-commons",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A portable school course hub prototype with resources and discussions.",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check public/app.js && node --check public/data.js && node --check public/state.js",
+    "test": "node --test"
+  }
+}
