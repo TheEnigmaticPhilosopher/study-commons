@@ -1,6 +1,9 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { readConfig } from './lib/config.js';
+import { createStore } from './lib/store.js';
+import { createApi } from './lib/api.js';
 
 // Only public assets are served. Source, configuration and secrets stay private.
 const assets = new Map([
@@ -10,24 +13,27 @@ const assets = new Map([
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
   ['/data.js', ['data.js', 'text/javascript; charset=utf-8']],
   ['/state.js', ['state.js', 'text/javascript; charset=utf-8']],
+  ['/canvas.js', ['canvas.js', 'text/javascript; charset=utf-8']],
 ]);
 
-export function createAppServer() {
-  return createServer(async (request, response) => {
+export function createAppServer({ config = readConfig({}), store = createStore(), fetcher } = {}) {
+  const api = createApi(config, store, { fetcher });
+  const server = createServer(async (request, response) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.setHeader('Cache-Control', 'no-cache');
-    response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'");
+    response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+    let pathname;
+    try { pathname = new URL(request.url, 'http://localhost').pathname; }
+    catch { response.writeHead(400).end('Bad request'); return; }
+    if (await api(request, response, pathname)) return;
     if (!['GET', 'HEAD'].includes(request.method)) {
       response.writeHead(405, { Allow: 'GET, HEAD' }).end('Method not allowed');
       return;
     }
-    let pathname;
-    try { pathname = new URL(request.url, 'http://localhost').pathname; }
-    catch { response.writeHead(400).end('Bad request'); return; }
     if (pathname === '/health') {
       response.writeHead(200, { 'Content-Type': 'application/json' });
-      response.end(request.method === 'HEAD' ? undefined : JSON.stringify({ status: 'ok', mode: 'browser-local-prototype' }));
+      response.end(request.method === 'HEAD' ? undefined : JSON.stringify({ status: 'ok' }));
       return;
     }
     const asset = assets.get(pathname);
@@ -40,12 +46,16 @@ export function createAppServer() {
       response.writeHead(500).end('Unable to load this page');
     }
   });
+  server.on('close', () => store.close());
+  server.requestTimeout = 150000;
+  return server;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const port = Number(process.env.PORT || 3000);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be an integer from 1 to 65535.');
-  const server = createAppServer();
+  try { process.loadEnvFile(); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  const config = readConfig();
+  const { port } = config;
+  const server = createAppServer({ config, store: createStore(config.dbPath) });
   server.listen(port, '0.0.0.0', () => console.log(`Study Commons running at http://localhost:${port}`));
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => server.close());
 }

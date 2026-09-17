@@ -5,3 +5,8 @@ node_modules/
 .DS_Store
 *.log
 .cache/
+data/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
