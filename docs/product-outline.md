@@ -1,37 +1,30 @@
 # School study hub
 
-Study Commons is a school-specific course resource hub with Canvas-style navigation. Students choose courses from the school's catalog and add them to a personal dashboard.
+Study Commons is a school-specific course resource hub with Canvas-style navigation. Students choose courses from a school catalog and add them to a personal dashboard.
 
-## Course spaces
+Each subject has a maintained library and discussion board. AP Chemistry has nine units; English can organize material by books or writing skills. Resources can include official exam questions, notes, open educational material and original student contributions, with a recorded creator/source.
 
-Each course has a maintained resource library and a discussion board. The course outline is tailored to its content: AP Chemistry can use nine units, while English can use books, writing skills and reading topics. Resources can include published exam questions, notes, open educational material and original student contributions. Link to publisher originals and record the creator/source of each resource.
-
-The course library is shared conceptually across students taking the same subject. Class sections, teachers and academic years can have different pacing schedules. Those schedules should be attached to the relevant class instead of duplicating the entire library.
-
-## Discussions and optional contributions
-
-Students can ask course questions, add a topic tag, reply and mark their own questions answered. In a shared implementation, questions would normally appear immediately, with reporting and moderator oversight. Resource suggestions are a smaller supporting feature and require review before joining the maintained library.
-
-## Planned Canvas connection
-
-A Canvas connection would associate a student's actual class with the course library and retrieve permitted module and calendar information. Explicit lesson dates or a teacher-confirmed pacing guide determine a unit's planned teaching window. Module availability and assignment deadlines remain separately labeled dates.
-
-For example, AP Chemistry Unit 9 might show a planned teaching window of March 15–19, 2027, with related notes, practice resources and discussions. The view should identify its schedule source and last successful sync time. If dates are inferred, they must be labeled estimated. Missing dates should remain unscheduled.
+The subject library is conceptually shared. Class sections, teachers and academic years have different schedules, which belong to the actual class rather than the entire subject.
 
 ## Current implementation
 
-- Editable school name, example catalog and course-specific module structures.
-- Personal dashboard course selection.
-- Course resources and discussions, question/reply forms and answered states.
-- Optional resource suggestions displayed as pending.
-- Browser-local persistence, responsive layout and light/dark appearance.
-- Dependency-free Node static server and Replit configuration.
+- Editable school name, example catalog, tailored course units and resource links.
+- Browser-local dashboard selections, questions, replies, answered states and pending suggestions.
+- Private single-user Canvas login and read-only sync for one configured course.
+- SQLite snapshots, manual module/event mappings, sync status and failure recovery.
+- Linked Canvas resources and explicit teaching dates within study-hub units.
+- Fictional demo mode with a rescheduling scenario.
+- Node.js server, Replit configuration and automated fixture tests.
 
-## Still to implement for shared school use
+The example catalog is not a verified school catalog. A student's private Canvas content appears only in the signed-in personal pilot. No credentials or synced course data belong in the repository.
 
-- School accounts, membership checks and server-side permissions.
-- Shared database-backed discussions, resource review and reporting.
-- Canvas API authentication, import, module/event mappings and synchronization.
-- Teacher-confirmed pacing editor and schedule-aware dashboard.
+## Work remaining for school use
 
-The current example content is not a verified school catalog. No Canvas course is connected, and there are no real student records or credentials in this repository.
+- School accounts, membership checks and server-side role/ownership permissions.
+- Shared database-backed discussions, resource review, reporting and moderation.
+- Per-user Canvas OAuth with a school-approved developer key.
+- Enrollment and section-aware course access and schedules.
+- Durable hosted storage, shared sessions and operational monitoring.
+- Teacher-confirmed pacing editor, background sync and schedule-aware dashboard.
+
+Questions and suggestions are not yet sent to a shared server or moderator. The browser's “mine” flag is a demo display convention, not authorization.

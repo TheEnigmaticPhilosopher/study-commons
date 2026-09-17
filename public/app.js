@@ -1,5 +1,6 @@
 import { school, courses } from './data.js';
 import { createInitialState, loadState, saveState, safeUrl, parseRoute, escapeHTML as e } from './state.js';
+import { createCanvasUi } from './canvas.js';
 
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
@@ -8,6 +9,7 @@ let expandedQuestionId = '';
 let noticeTimer;
 const main = document.getElementById('main');
 const navigation = document.getElementById('navigation');
+const canvas = createCanvasUi({ courses, onChange: render, notice });
 document.getElementById('school-name').textContent = school.name;
 document.title = `${school.name} · Study Commons`;
 
@@ -59,11 +61,12 @@ function resourcesView(course) {
   return `<div class="resource-links">${course.links.map(item => link(item.url, item.title)).join('')}</div>
     ${course.units.length ? `<div class="units">${course.units.map((unit, index) => {
       const resources = course.resources.filter(resource => resource.unitId === unit.id);
-      return `<details class="unit" ${index === 0 ? 'open' : ''}><summary>${e(unit.title)}<span class="count">${resources.length} ${resources.length === 1 ? 'resource' : 'resources'}</span></summary>
-        <div class="unit-content">${resources.length ? resources.map(resource => resource.url
+      const resourceCount = resources.length + canvas.resourceCount(course.id, unit.id);
+      return `<details class="unit" ${index === 0 ? 'open' : ''}><summary>${e(unit.title)}<span class="count">${resourceCount} ${resourceCount === 1 ? 'resource' : 'resources'}</span></summary>
+        <div class="unit-content">${canvas.unitView(course.id, unit.id)}${resources.length ? resources.map(resource => resource.url
           ? `<div class="resource">${link(resource.url, resource.title)}<p class="meta">${e(resource.type)} · ${e(resource.source)}</p></div>`
           : `<details class="resource"><summary>${e(resource.title)}</summary><p class="meta">${e(resource.type)} · ${e(resource.source)}</p><p class="prose">${e(resource.text)}</p></details>`).join('')
-          : '<p class="empty-inline">No resources here yet.</p>'}
+          : resourceCount ? '' : '<p class="empty-inline">No resources here yet.</p>'}
           <a class="unit-question" href="${courseHref(course, 'discussions')}" data-action="ask-unit" data-unit="${e(unit.id)}">Ask about this topic</a>
         </div></details>`;
     }).join('')}</div>` : '<div class="empty"><h2>Course outline coming soon</h2><p>The resource library is being organized. You can still use the discussion board.</p></div>'}
@@ -107,9 +110,12 @@ function render() {
     main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>School courses</h1><p class="muted">Example catalog · choose the courses you take.</p></div></div><div class="course-grid">${courses.map(item => courseCard(item, true)).join('')}</div>`;
   } else if (page === 'course' && course) {
     main.innerHTML = courseHeader(course, section) + (section === 'discussions' ? discussionsView(course) : resourcesView(course));
+  } else if (page === 'canvas') {
+    main.innerHTML = canvas.view();
   } else {
     main.innerHTML = '<div class="empty"><h1>Page not found</h1><a class="button" href="#dashboard">Back to dashboard</a></div>';
   }
+  navigation.insertAdjacentHTML('beforeend', `<p class="nav-label">Connections</p><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>`);
 }
 
 function openQuestionForm(unitId = '') {
@@ -183,3 +189,4 @@ window.addEventListener('hashchange', () => {
   if (pendingUnit !== null) { openQuestionForm(pendingUnit); pendingUnit = null; }
 });
 render();
+canvas.refresh();

@@ -1,113 +1,83 @@
 # Study Commons
 
-A portable starter for a school course hub, based on the dashboard and discussion-board concept. It uses plain HTML, CSS and JavaScript, with a dependency-free Node.js server.
+A school course hub with a private, read-only Canvas backend. Plain HTML, CSS, JavaScript and Node.js; no third-party runtime packages or build step.
 
-**This is a deployable frontend prototype.** Course selections, questions, replies and resource suggestions are stored in the current browser's local storage. They survive refreshes, but they are not shared across students or devices. There are no accounts, school-membership checks or server-side moderation. Anyone who can access a published URL can view its example content.
-
-Read the [product outline](docs/product-outline.md) for the school-specific design and the [Canvas pilot guide](docs/canvas-pilot.md) for the exact access, configuration and development needed to test a school-provided dummy course. Canvas synchronization is planned and is **not implemented in this starter**.
+The Canvas pilot now works with either fictional fixtures or one real course accessible to your own Canvas account. A private demo login protects synced content. The general school catalog remains public example content. Discussions, dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
 
 ## Run locally
 
-Install Node.js 22 or newer, open a terminal in this folder, and run:
+Use Node.js **22.13 or newer** (Node 24 recommended). The built-in SQLite module may display an experimental warning on some Node versions.
 
-```sh
-npm start
-```
+1. Copy `.env.example` to `.env` if you do not already have local settings.
+2. Set `HUB_ADMIN_PASSWORD` to a unique password of at least 16 characters.
+3. Leave `CANVAS_MODE=demo` to try the fictional AP Chemistry course without credentials.
+4. Run `node server.js` (or `npm start`).
+5. Open http://localhost:3000, select **Canvas connection**, and sign in with your demo password.
+6. Select **Sync now**, expand Unit 9, and link its module to AP Chemistry → Unit 9.
+7. Link the **Unit 9 teaching week** calendar event to the same unit. Open AP Chemistry to see the schedule and Canvas resources.
+8. Return to Canvas connection, select the rescheduled scenario, and sync again. The teaching dates change from March 15–19 to March 22–26, 2027.
 
-Open `http://localhost:3000`. There are no packages to install and no build step. To use a different port, set the `PORT` environment variable. The server listens on `0.0.0.0` so hosts such as Replit can reach it.
+Those dates and the demo course are fictional. Fictional Canvas links do not open a real school course.
 
-## Import and publish on Replit
+## Connect your own Canvas course
 
-1. Open [Replit Import](https://replit.com/import), select **ZIP**, and upload `study-commons.zip`.
-2. Import the project. Its root should contain `.replit`, `package.json`, `server.js` and `public/`.
-3. Run the app. The included `.replit` uses `node server.js`. If Replit asks for a run command, use `npm start` or `node server.js`.
-4. Check the app in Preview, then open **Publish**.
-5. For **Autoscale**, use `node server.js` as the deployment run command. No build command is needed. Review the publishing settings in your Replit account before publishing.
+Follow the [step-by-step Canvas guide](docs/canvas-pilot.md). Set `CANVAS_MODE=live`, `CANVAS_BASE_URL`, `CANVAS_COURSE_ID`, and `CANVAS_ACCESS_TOKEN` privately, then restart. The browser never receives your token. Never paste a token into chat, a GitHub file, or the demo login form.
 
-You can also import a GitHub repository containing these files using the same Replit importer. This source package has not been deployed to your Replit account.
+A personal token is for your own development test. A school rollout needs school approval and Canvas OAuth; this starter does not provide multiuser Canvas authentication. [Canvas authentication documentation](https://developerdocs.instructure.com/services/canvas/oauth2/file.oauth).
 
-For a host that supports static publishing, publish the **contents of `public/`** as the site root. The Node server is only a static file server and is not needed for that option. Use a web server or host rather than opening `index.html` as a `file://` URL: the app uses JavaScript modules. This starter assumes it is hosted at the domain root, not a subdirectory.
+## Replit
 
-Official references checked September 10, 2026: [Importing a project](https://docs.replit.com/build/import-from-providers), [project configuration](https://docs.replit.com/features/project-setup/configuration), [ports](https://docs.replit.com/features/project-setup/ports), and [publishing types](https://docs.replit.com/features/publishing/deployment-types).
+1. Import this GitHub repository or its source ZIP into Replit.
+2. Use Node 22.13+ and run command `node server.js`; there is no build command.
+3. Add the settings from `.env.example` to **Replit Secrets**. Keep the workspace private when using real course data.
+4. Set `APP_ORIGIN` to the exact HTTPS address at which you open the running app (scheme and hostname, no path). Preview and published addresses differ.
+5. Run, open the app in its own tab, then sign in and sync. The app blocks embedding in other sites, so use the standalone tab for this pilot.
+6. For a disposable published demonstration, use a **single instance**. Set the published `APP_ORIGIN` and deployment secrets before running.
 
-## What's included
+SQLite saves snapshots and unit links in `data/study-commons.sqlite` on that machine. **The current backend is a single-process pilot.** Sessions are held in memory and end on restart. Do not use multiple Autoscale instances: each would have different sessions and local data. Replit deployment filesystems are not a durable database; a deployment can lose saved mappings and snapshots. Use a persistent database (such as PostgreSQL), shared sessions, and school sign-in before a lasting school deployment. Publishing does not copy your workspace's synced data into a durable service.
 
-- A personal dashboard with course cards and a school course catalog.
-- Working add/remove course controls; removing a card preserves that course's discussions.
-- Course-specific resources and discussion pages.
-- AP Chemistry's nine-module outline, links to official College Board materials, and one illustrative note.
-- Example English, Algebra II and AP Biology entries. These are not your school's actual catalog. Biology is an empty course outline ready to customize.
-- Expandable question threads, replies, topic tags, and answered/reopened states for questions created in this browser.
-- Optional resource suggestions stored locally as pending. Suggestions are not sent to a moderator or automatically added to the library.
-- Browser-local persistence, responsive layouts, keyboard-accessible controls, and system light/dark appearance.
+The backend cannot run as a static-only website. This repository has not been deployed to your Replit account.
 
-## Edit your school and courses
+Official references: [Replit Secrets](https://docs.replit.com/core-concepts/project-editor/app-setup/secrets), [publishing](https://docs.replit.com/cloud-services/deployments/about-deployments).
 
-Start with **`public/data.js`**:
+## What the Canvas backend does
 
-- Change `school.name` to your school's name.
-- Change `school.defaultCourseIds` to set the first-time dashboard selection.
-- Replace the example courses with your school's course catalog.
-- Give each course and module a stable, unique `id`.
-- Tailor `units` to the course: they may be science units, books, writing skills, chapters or other topics.
-- Add course-wide links to `links`.
-- Add resources to `resources`, with a `unitId` matching one of the course's module IDs.
-- Remove or replace `questions` to change the example discussions.
+- Reads only the configured course, published/visible modules and module items, and course calendar events in a chosen date range.
+- Stores a normalized snapshot, stable ID mappings, last attempt and last successful sync.
+- Labels explicit, manually linked teaching events separately from module unlock dates and resource deadlines.
+- Reconciles changed/deleted records after a complete sync; preserves the last good snapshot if any request fails.
+- Uses pagination with same-origin, same-endpoint checks, bounded responses and timeouts.
+- Keeps imported content behind an HttpOnly session cookie. Mutations require a matching `APP_ORIGIN`.
+- Omits grades, submissions, rosters, event descriptions, and appointment reservations.
+- Makes **GET requests only** to Canvas. Sync and mapping changes write only to the hub's database.
 
-Example resource linked to a module:
+A new Canvas token gets a separate local cache so one account cannot inherit another account's saved data. Re-link units after rotating a token. Old snapshots remain in the ignored database; remove the database while the app is stopped if you need to erase all pilot data.
 
-```js
-{
-  id: 'unique-resource-id',
-  unitId: 'unit-1',
-  title: 'Atomic structure notes',
-  type: 'Notes',
-  source: 'Name of the resource creator',
-  url: 'https://example.org/your-resource'
-}
-```
+## Customize the school library
 
-Use a `text` property instead of `url` to display a short note directly. Resource URLs must use `http:` or `https:`. Adding a new file under `public/` also requires adding its route and MIME type to the server's asset allowlist, or hosting it separately and linking to it.
+Edit `public/data.js`: school name, catalog, units, resources and example discussions. AP Chemistry has nine units; other subjects can use different structures. Resource entries support a URL or short inline text, plus creator/source and unit ID. The catalog is illustrative, not a verified list of your school's courses.
 
-Change colors, spacing and layout in **`public/styles.css`**. Application rendering and interactions live in **`public/app.js`**. The persistence and safe-text helpers live in **`public/state.js`**. No Codex APIs, visualization runtime, remote fonts or external JavaScript libraries are required.
+Edit `public/styles.css` for appearance. Add new public files to the explicit asset allowlist in `server.js`. Never add configuration files or database paths to that allowlist.
 
-### Reset demo state
-
-Previously saved discussions override their initial example data. After editing examples, remove the `study-commons-demo-v1` local-storage key using your browser's developer tools, or change `school.storageKey` to a new name. Changing the key starts a fresh local demo without deleting the old key.
-
-Browser storage is per browser and origin. Replit Preview and a published domain can therefore have different saved activity. If storage is blocked or full, the app continues for the current page session and displays a notice that changes could not be saved.
-
-## Checks
+## Verification
 
 ```sh
 npm run check
 npm test
 ```
 
-Checks cover JavaScript syntax, static asset responses, HEAD requests, unsupported methods, private-file protection, browser-state round trips, malformed saved state and safe URLs/text. They do not replace testing with actual students or constitute a browser accessibility audit.
+Or run `node scripts/check.js` and `node --test` directly. Tests use synthetic Canvas responses, never real credentials. They exercise auth/origin checks, token non-disclosure, pagination, rescheduling, stable mappings, deletion, failed partial syncs, SQLite persistence, and existing browser-state behavior. A live-course acceptance test still requires your privately configured credentials.
 
-## Turning it into a shared school application
+## Project structure
 
-The current Node server only serves files. For a real shared discussion board, replace the browser-local state layer with a server API and durable database, then add school sign-in and server-side authorization. Membership, ownership and moderator permissions must be checked on the server; the prototype's `mine` flag is only a display convention. Add the resource-review workflow and discussion reporting there as well.
+- `server.js` — HTTP server, public asset allowlist, private API routing.
+- `lib/config.js` — environment configuration and validation.
+- `lib/canvas.js` — read-only Canvas client and fictional fixture adapter.
+- `lib/store.js` — SQLite snapshot storage.
+- `lib/api.js` — login, sessions, sync and unit mappings.
+- `public/canvas.js` — private connection screen and scheduled unit resources.
+- `public/app.js`, `data.js`, `state.js` — catalog, resources, local discussions.
+- `docs/canvas-pilot.md` — personal/course demo setup and acceptance checklist.
+- `docs/product-outline.md` — current scope and school rollout work.
 
-Keep the school membership policy and content permissions explicit before sharing real student material. Files uploaded to a hosting workspace or written to a deployment filesystem are not a substitute for a durable shared database.
-
-## Files
-
-```text
-.replit          Replit run and publishing configuration
-.env.example     Placeholder settings for a future Canvas connector
-package.json     Run and check commands; no dependencies
-server.js        Static HTTP server and health endpoint
-docs/
-  product-outline.md  School hub design and implementation status
-  canvas-pilot.md     Canvas test-course setup and sync test plan
-public/
-  index.html     Standalone page shell
-  styles.css     Responsive appearance
-  data.js        School, courses, modules and example content
-  app.js         Dashboard, resources and discussion interactions
-  state.js       Browser-local persistence and safe rendering helpers
-test/
-  app.test.js    Server and state checks
-```
+Shared discussions, moderator approvals, school SSO, Canvas OAuth, automatic background sync and multi-section enrollment filtering remain future work.
