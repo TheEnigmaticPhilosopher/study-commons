@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "sync:canvas": "node scripts/sync-canvas.js",
     "check": "node scripts/check.js",
     "test": "node --test"
   }

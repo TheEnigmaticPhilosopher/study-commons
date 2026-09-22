@@ -10,9 +10,10 @@ The subject library is conceptually shared. Class sections, teachers and academi
 
 - Editable school name, example catalog, tailored course units and resource links.
 - Browser-local dashboard selections, questions, replies, answered states and pending suggestions.
-- Private single-user Canvas login and read-only sync for one configured course.
-- SQLite snapshots, manual module/event mappings, sync status and failure recovery.
-- Linked Canvas resources and explicit teaching dates within study-hub units.
+- Private single-user Canvas login and read-only discovery of available/completed courses.
+- Automatically linked course cards, original Canvas modules, and course-wide resource tabs.
+- SQLite snapshots, per-category refresh status, teaching-event mappings and failure recovery.
+- Linked Canvas resources and explicit teaching dates within original modules; optional mappings to example library units.
 - Fictional demo mode with a rescheduling scenario.
 - Node.js server, Replit configuration and automated fixture tests.
 

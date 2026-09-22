@@ -1,4 +1,5 @@
 import { escapeHTML as e, safeUrl } from './state.js';
+import { accountCards, accountNav, accountCourseView } from './canvas-account.js';
 
 export function formatCanvasDate(value, timeZone = 'UTC', dateOnly = false) {
   if (!value) return 'No date supplied';
@@ -9,6 +10,7 @@ export function formatCanvasDate(value, timeZone = 'UTC', dateOnly = false) {
 export function createCanvasUi({ courses, onChange, notice }) {
   let session = null; let data = null; let error = ''; let busy = false; let generation = 0;
   let start = ''; let end = ''; let scenario = 'original';
+  let pollTimer; let includeCompleted = true;
   const dateText = value => formatCanvasDate(value, data?.snapshot?.course.timeZone);
   const sourceLink = (url, label) => safeUrl(url) ? `<a href="${e(safeUrl(url))}" target="_blank" rel="noopener noreferrer">${e(label)} ↗</a>` : e(label);
   function eventDates(event) {
@@ -34,7 +36,34 @@ export function createCanvasUi({ courses, onChange, notice }) {
       if (current !== generation) return;
       session = nextSession; data = nextData; error = '';
     } catch { if (current !== generation) return; data = null; error = 'The Canvas backend is unavailable. Start the Node server and reload.'; }
-    onChange();
+    onChange(); schedulePoll();
+  }
+  function schedulePoll() {
+    clearTimeout(pollTimer);
+    if (session?.authenticated && data?.accountJob?.running) pollTimer = setTimeout(async () => {
+      try {
+        const current = generation;
+        const next = await api('canvas');
+        if (current !== generation) return;
+        data = next; onChange(); schedulePoll();
+      } catch (caught) { error = caught.message; onChange(); }
+    }, 1500);
+  }
+  function accountControls() {
+    const snapshot = data.account?.snapshot; const job = data.accountJob;
+    if (!start) start = snapshot?.range.start || (data.mode === 'demo' ? '2027-03-01' : new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+    if (!end) end = snapshot?.range.end || (data.mode === 'demo' ? '2027-03-31' : new Date(Date.now() + 330 * 86400000).toISOString().slice(0, 10));
+    return `<section class="canvas-panel"><div class="section-heading"><h2>${data.mode === 'demo' ? 'Fictional Canvas account' : 'Your Canvas account'}</h2><button data-canvas-action="logout" ${busy ? 'disabled' : ''}>Sign out</button></div>
+      <p class="muted">${e(data.baseUrl)} · Courses appear automatically on your dashboard after syncing.</p>
+      <p>Import modules, assignments, pages, file links, announcements, discussion topics, quizzes, and calendar events that your account can access.</p>
+      ${!data.accountReady ? `<p class="canvas-alert">Missing server settings: ${e(data.accountMissing.join(', '))}. Save them privately and restart the server.</p>` : ''}
+      <form data-canvas-form="sync-all" class="form-grid"><label>Calendar start<input type="date" name="start" value="${e(start)}" required></label><label>Calendar end<input type="date" name="end" value="${e(end)}" required></label>
+      <label class="full">Course scope<select name="scope"><option value="all" ${includeCompleted ? 'selected' : ''}>Available and completed courses</option><option value="available" ${!includeCompleted ? 'selected' : ''}>Available courses only</option></select></label>
+      <button class="primary full" ${busy || job?.running || !data.accountReady ? 'disabled' : ''}>${job?.running ? 'Syncing courses…' : 'Sync all Canvas courses'}</button></form>
+      ${job?.running ? `<p class="canvas-progress" role="status">${job.total ? `${job.completed} of ${job.total} courses processed` : 'Discovering your courses…'}${job.currentCourse ? ` · ${e(job.currentCourse)}` : ''}</p>` : ''}
+      ${data.account?.lastError || job?.error ? `<p class="canvas-alert">${e(data.account.lastError || job.error)}</p>` : ''}
+      ${snapshot ? `<p class="sync-status">Account scan finished ${e(new Date(snapshot.completedAt).toLocaleString())} · ${snapshot.courses.length} courses · ${snapshot.warnings} category warnings.</p><div class="actions"><a class="button" href="#dashboard">Open your linked courses</a></div>` : '<p class="sync-status">No account import saved yet.</p>'}
+      <p class="meta">Read-only import. Calendar dates use this window; the other resource lists cover each course. Resource links open the original in Canvas. Hidden material and teacher-only content remain subject to your account’s permissions.</p></section>`;
   }
   function mappingForm(kind, item) {
     const current = data.mappings.find(mapping => mapping.kind === kind && mapping.sourceId === item.id);
@@ -52,10 +81,11 @@ export function createCanvasUi({ courses, onChange, notice }) {
       <p class="meta">Your Canvas access token belongs only in server secrets. Never enter it in this form.</p></section>`;
     if (!data) return heading + alert + '<button data-canvas-action="refresh">Reload connection</button>';
     const snapshot = data.snapshot;
+    const accountPanel = accountControls();
     const year = new Date().getFullYear();
     if (!start) start = snapshot?.range.start || (data.mode === 'demo' ? '2027-03-01' : `${year}-01-01`);
     if (!end) end = snapshot?.range.end || (data.mode === 'demo' ? '2027-03-31' : `${year}-12-31`);
-    return heading + alert + `<section class="canvas-panel"><div class="section-heading"><h2>${data.mode === 'demo' ? 'Fictional course · demo mode' : 'Your Canvas course'}</h2><button data-canvas-action="logout" ${busy ? 'disabled' : ''}>Sign out</button></div>
+    return heading + alert + accountPanel + `<details class="library-examples"><summary>Optional: link a single Canvas course to the example library</summary><section class="canvas-panel"><div class="section-heading"><h2>${data.mode === 'demo' ? 'Fictional course · demo mode' : 'Your configured Canvas course'}</h2></div>
       <p>${data.mode === 'demo' ? 'This practice course uses sample data and makes no requests to your school.' : e(`${data.baseUrl} / course ${data.courseId}`)}</p>
       ${!data.ready ? `<p class="canvas-alert">Missing server settings: ${e(data.missing.join(', '))}. Add them privately and restart.</p>` : ''}
       <form data-canvas-form="sync" class="form-grid"><label>Calendar start<input type="date" name="start" value="${e(start)}" required></label><label>Calendar end<input type="date" name="end" value="${e(end)}" required></label>
@@ -70,7 +100,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
         ${module.unlockAt ? `<p class="meta">Module opens: ${e(dateText(module.unlockAt))}. This is an availability date.</p>` : ''}
         <ul>${module.items.map(item => `<li>${sourceLink(item.url, item.title)} <span class="meta">${e(item.type)}${item.locked ? ' · Locked in Canvas' : ''}${item.dueAt ? ` · Due ${e(dateText(item.dueAt))}` : ''}</span></li>`).join('')}</ul></details>`).join('') : '<p class="empty-inline">No visible modules were returned by Canvas.</p>'}
       <h3>Link teaching events</h3><p class="muted">Only link an event if it represents teaching time for that unit. Canvas deadlines and module availability do not establish a teaching week.</p>
-      ${snapshot.events.length ? snapshot.events.map(event => `<article class="canvas-record"><h4>${sourceLink(event.url, event.title)}</h4><p>${e(eventDates(event))}</p>${mappingForm('event', event)}</article>`).join('') : '<p class="empty-inline">No course calendar events in this range. Try different dates, or ask your teacher to add a lesson event. Dates cannot be inferred from an empty calendar.</p>'}</section>` : ''}`;
+      ${snapshot.events.length ? snapshot.events.map(event => `<article class="canvas-record"><h4>${sourceLink(event.url, event.title)}</h4><p>${e(eventDates(event))}</p>${mappingForm('event', event)}</article>`).join('') : '<p class="empty-inline">No course calendar events in this range. Try different dates, or ask your teacher to add a lesson event. Dates cannot be inferred from an empty calendar.</p>'}</section>` : ''}</details>`;
   }
   function unitView(courseId, unitId) {
     if (!session?.authenticated || !data?.snapshot) return '';
@@ -98,7 +128,9 @@ export function createCanvasUi({ courses, onChange, notice }) {
     const values = Object.fromEntries(new FormData(form));
     const action = form.dataset.canvasForm;
     const kind = form.dataset.kind; const sourceId = form.dataset.source;
-    if (action === 'sync') { start = values.start; end = values.end; scenario = values.scenario || 'original'; }
+    const canvasCourseId = form.dataset.course; const eventId = form.dataset.event;
+    if (action === 'sync' || action === 'sync-all') { start = values.start; end = values.end; scenario = values.scenario || 'original'; }
+    if (action === 'sync-all') includeCompleted = values.scope === 'all';
     busy = true; error = ''; onChange();
     try {
       if (action === 'login') {
@@ -106,13 +138,17 @@ export function createCanvasUi({ courses, onChange, notice }) {
         await refresh(); notice('Signed in to the private Canvas demo.');
       } else if (action === 'sync') {
         data = await api('canvas/sync', { start, end, scenario }); notice('Canvas snapshot saved.');
+      } else if (action === 'sync-all') {
+        data = await api('canvas/sync-all', { start, end, includeCompleted }); schedulePoll(); notice('Canvas course import started.');
+      } else if (action === 'course-mapping') {
+        data = await api('canvas/course-mapping', { courseId: canvasCourseId, eventId, moduleId: values.moduleId }); notice('Teaching event linked to its Canvas module.');
       } else if (action === 'mapping') {
         const [courseId, unitId] = values.target ? JSON.parse(values.target) : ['', ''];
         data = await api('canvas/mapping', { kind, sourceId, courseId, unitId }); notice('Unit link saved. Open that course to see it.');
       }
     } catch (caught) {
       error = caught.message;
-      if (action === 'sync' && session?.authenticated) { try { data = await api('canvas'); } catch { data = null; } }
+      if (['sync', 'sync-all'].includes(action) && session?.authenticated) { try { data = await api('canvas'); schedulePoll(); } catch { data = null; } }
     } finally { busy = false; onChange(); }
   });
   document.addEventListener('click', async event => {
@@ -121,11 +157,12 @@ export function createCanvasUi({ courses, onChange, notice }) {
     if (action === 'refresh') { await refresh(); return; }
     if (action === 'logout') {
       busy = true;
-      try { await api('logout', {}); ++generation; data = null; session = { ...session, authenticated: false }; error = ''; }
+      try { await api('logout', {}); ++generation; clearTimeout(pollTimer); data = null; session = { ...session, authenticated: false }; error = ''; }
       catch (caught) { error = caught.message; }
       finally { busy = false; onChange(); }
     }
   });
   window.addEventListener('pageshow', event => { if (event.persisted) refresh(); });
-  return { view, unitView, resourceCount, refresh };
+  return { view, unitView, resourceCount, refresh, hasAccount: () => Boolean(data?.account?.snapshot),
+    dashboardView: () => accountCards(data), navView: () => accountNav(data), courseView: (id, section) => accountCourseView(data, id, section, busy) };
 }

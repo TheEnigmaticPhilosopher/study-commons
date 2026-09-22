@@ -2,7 +2,7 @@
 
 A school course hub with a private, read-only Canvas backend. Plain HTML, CSS, JavaScript and Node.js; no third-party runtime packages or build step.
 
-The Canvas pilot now works with either fictional fixtures or one real course accessible to your own Canvas account. A private demo login protects synced content. The general school catalog remains public example content. Discussions, dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
+The Canvas pilot discovers your available and completed courses and adds them to a private dashboard with their original modules and resource links. It works with fictional fixtures or your own Canvas account. A private pilot login protects synced content. The general school catalog remains public example content. Hub discussions, example dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
 
 ## Run locally
 
@@ -10,18 +10,20 @@ Use Node.js **22.13 or newer** (Node 24 recommended). The built-in SQLite module
 
 1. Copy `.env.example` to `.env` if you do not already have local settings.
 2. Set `HUB_ADMIN_PASSWORD` to a unique password of at least 16 characters.
-3. Leave `CANVAS_MODE=demo` to try the fictional AP Chemistry course without credentials.
+3. Leave `CANVAS_MODE=demo` to try fictional Chemistry and English courses without credentials.
 4. Run `node server.js` (or `npm start`).
 5. Open http://localhost:3000, select **Canvas connection**, and sign in with your demo password.
-6. Select **Sync now**, expand Unit 9, and link its module to AP Chemistry → Unit 9.
-7. Link the **Unit 9 teaching week** calendar event to the same unit. Open AP Chemistry to see the schedule and Canvas resources.
-8. Return to Canvas connection, select the rescheduled scenario, and sync again. The teaching dates change from March 15–19 to March 22–26, 2027.
+6. Select **Sync all Canvas courses**, then **Open your linked courses**. Both courses appear automatically.
+7. Open Chemistry → **Calendar**, select Unit 9 for **Unit 9 teaching week**, and save the teaching link.
+8. Open **Modules** and expand Unit 9 to see March 15–19, 2027 under **Scheduled teaching**. The other tabs list course-wide resource links.
 
 Those dates and the demo course are fictional. Fictional Canvas links do not open a real school course.
 
-## Connect your own Canvas course
+## Connect your Canvas account
 
-Follow the [step-by-step Canvas guide](docs/canvas-pilot.md). Set `CANVAS_MODE=live`, `CANVAS_BASE_URL`, `CANVAS_COURSE_ID`, and `CANVAS_ACCESS_TOKEN` privately, then restart. The browser never receives your token. Never paste a token into chat, a GitHub file, or the demo login form.
+Follow the [step-by-step Canvas guide](docs/canvas-pilot.md). Set `CANVAS_MODE=live`, `CANVAS_BASE_URL`, and `CANVAS_ACCESS_TOKEN` privately, then restart. `CANVAS_COURSE_ID` is optional for account sync; it is used only by the single-course example-library mapping tool. The browser never receives your token. Never paste a token into chat, a GitHub file, or the demo login form.
+
+Sync is manual: use **Sync all Canvas courses** after Canvas changes. A progress indicator tracks the import, and each category reports its last refresh and any access or request errors. To import from the terminal while no other sync is running, use `node scripts/sync-canvas.js`; optional start and end arguments select the calendar window, for example `node scripts/sync-canvas.js 2027-03-01 2027-03-31`. The CLI loads the same private settings and SQLite database as the server. Reload the app after a CLI import.
 
 A personal token is for your own development test. A school rollout needs school approval and Canvas OAuth; this starter does not provide multiuser Canvas authentication. [Canvas authentication documentation](https://developerdocs.instructure.com/services/canvas/oauth2/file.oauth).
 
@@ -42,10 +44,13 @@ Official references: [Replit Secrets](https://docs.replit.com/core-concepts/proj
 
 ## What the Canvas backend does
 
-- Reads only the configured course, published/visible modules and module items, and course calendar events in a chosen date range.
-- Stores a normalized snapshot, stable ID mappings, last attempt and last successful sync.
+- Discovers available and, optionally, completed courses accessible to your account.
+- Imports visible modules/items, assignments, pages, file links, announcements, discussion topics, quizzes, and course calendar events in a chosen date range.
+- Adds course cards and navigation automatically, preserving Canvas course/module IDs. Each course has its own resource tabs.
+- Stores titles, IDs, source links and selected dates. It does not download file contents, page bodies, discussion replies or announcement bodies. New Quizzes may appear through assignments or modules rather than the Classic Quizzes list.
+- Stores a normalized snapshot, stable teaching-event mappings and per-category refresh timestamps.
 - Labels explicit, manually linked teaching events separately from module unlock dates and resource deadlines.
-- Reconciles changed/deleted records after a complete sync; preserves the last good snapshot if any request fails.
+- Replaces successfully fetched categories to reflect changes/deletions. Temporary category failures retain older data with an explicit warning. A 403/404 clears that inaccessible category; failed discovery or a rejected token preserves the previous account snapshot and reports an error.
 - Uses pagination with same-origin, same-endpoint checks, bounded responses and timeouts.
 - Keeps imported content behind an HttpOnly session cookie. Mutations require a matching `APP_ORIGIN`.
 - Omits grades, submissions, rosters, event descriptions, and appointment reservations.
@@ -75,7 +80,9 @@ Or run `node scripts/check.js` and `node --test` directly. Tests use synthetic C
 - `lib/canvas.js` — read-only Canvas client and fictional fixture adapter.
 - `lib/store.js` — SQLite snapshot storage.
 - `lib/api.js` — login, sessions, sync and unit mappings.
-- `public/canvas.js` — private connection screen and scheduled unit resources.
+- `public/canvas.js` — private connection screen, sync progress and legacy unit links.
+- `public/canvas-account.js` — imported course dashboard, resource tabs and teaching links.
+- `scripts/sync-canvas.js` — account import from the terminal using private settings.
 - `public/app.js`, `data.js`, `state.js` — catalog, resources, local discussions.
 - `docs/canvas-pilot.md` — personal/course demo setup and acceptance checklist.
 - `docs/product-outline.md` — current scope and school rollout work.

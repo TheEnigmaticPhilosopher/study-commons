@@ -112,9 +112,17 @@ function render() {
     main.innerHTML = courseHeader(course, section) + (section === 'discussions' ? discussionsView(course) : resourcesView(course));
   } else if (page === 'canvas') {
     main.innerHTML = canvas.view();
+  } else if (page === 'canvas-course') {
+    const [, courseId, canvasSection] = location.hash.slice(1).split('/');
+    main.innerHTML = canvas.courseView(courseId, canvasSection);
   } else {
     main.innerHTML = '<div class="empty"><h1>Page not found</h1><a class="button" href="#dashboard">Back to dashboard</a></div>';
   }
+  if (['dashboard', 'catalog'].includes(page) && canvas.hasAccount()) {
+    const examples = main.innerHTML;
+    main.innerHTML = `<div class="page-heading"><div><h1>${page === 'dashboard' ? 'Your dashboard' : 'Your course resources'}</h1><p class="muted">Courses and materials linked to your private Canvas connection.</p></div></div>` + canvas.dashboardView() + `<details class="library-examples"><summary>Example school library</summary>${examples}</details>`;
+  }
+  navigation.insertAdjacentHTML('afterbegin', canvas.navView());
   navigation.insertAdjacentHTML('beforeend', `<p class="nav-label">Connections</p><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>`);
 }
 

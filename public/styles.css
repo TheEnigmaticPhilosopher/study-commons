@@ -114,6 +114,13 @@ textarea { resize: vertical; }
 .canvas-unit { padding: 16px; margin-bottom: 16px; border-radius: 7px; background: var(--soft); }
 .canvas-resource, .teaching-date { margin: 12px 0; }
 button:disabled { opacity: .6; cursor: wait; }
+.imported-courses { margin-bottom: 32px; }
+.canvas-tabs { flex-wrap: wrap; margin-top: 16px; }
+.canvas-resource-list { padding: 0; list-style: none; }
+.canvas-resource-list > li { padding: 14px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.canvas-progress { padding: 14px; background: var(--soft); border-radius: 7px; margin-top: 16px; }
+.library-examples { margin-top: 24px; }
+.library-examples > summary { margin-bottom: 18px; color: var(--muted); }
 @media (max-width: 900px) { .app-shell { grid-template-columns: 180px minmax(0, 1fr); } main { padding: 25px; } .course-grid { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
   .app-shell { grid-template-columns: minmax(0, 1fr); }

@@ -14,6 +14,7 @@ const assets = new Map([
   ['/data.js', ['data.js', 'text/javascript; charset=utf-8']],
   ['/state.js', ['state.js', 'text/javascript; charset=utf-8']],
   ['/canvas.js', ['canvas.js', 'text/javascript; charset=utf-8']],
+  ['/canvas-account.js', ['canvas-account.js', 'text/javascript; charset=utf-8']],
 ]);
 
 export function createAppServer({ config = readConfig({}), store = createStore(), fetcher } = {}) {
@@ -46,7 +47,7 @@ export function createAppServer({ config = readConfig({}), store = createStore()
       response.writeHead(500).end('Unable to load this page');
     }
   });
-  server.on('close', () => store.close());
+  server.on('close', () => { api.close(); store.close(); });
   server.requestTimeout = 150000;
   return server;
 }
