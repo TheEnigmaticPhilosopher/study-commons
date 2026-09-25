@@ -58,6 +58,10 @@ Official references: [Replit Secrets](https://docs.replit.com/core-concepts/proj
 
 A new Canvas token gets a separate local cache so one account cannot inherit another account's saved data. Re-link units after rotating a token. Old snapshots remain in the ignored database; remove the database while the app is stopped if you need to erase all pilot data.
 
+## SALTY connector
+
+Study Commons can remain separate while a future SALTY backend links to its saved resources through a dedicated read-only feed. See the [connector setup and boundary](docs/salty-connector.md). The endpoint is disabled until a separate connector key and explicit course allowlist are configured. It does not share the Canvas token, establish SALTY sign-in, or archive file contents.
+
 ## Customize the school library
 
 Edit `public/data.js`: school name, catalog, units, resources and example discussions. AP Chemistry has nine units; other subjects can use different structures. Resource entries support a URL or short inline text, plus creator/source and unit ID. The catalog is illustrative, not a verified list of your school's courses.
