@@ -104,6 +104,8 @@ test('cloud import resumes in fresh instances and publishes only a complete acco
   assert.equal(view.account.snapshot.courses.length, 2);
   assert.equal(view.account.snapshot.warnings, 0);
   assert.equal(view.accountJob.running, false);
+  assert.deepEqual(view.accountJob.range, range);
+  assert.equal(view.accountJob.includeCompleted, true);
   assert.equal(view.account.importGeneration, 1);
   for (const hidden of ['lease', 'results', 'queue']) assert.equal(hidden in view.accountJob, false);
   assert.ok(!JSON.stringify(view).includes(hub.config.token));

@@ -76,6 +76,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
   }
   function accountControls() {
     const snapshot = data.account?.snapshot; const job = data.accountJob;
+    if (job?.running && job.range) { start = job.range.start; end = job.range.end; includeCompleted = job.includeCompleted !== false; }
     if (!start) start = snapshot?.range.start || (data.mode === 'demo' ? '2027-03-01' : new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
     if (!end) end = snapshot?.range.end || (data.mode === 'demo' ? '2027-03-31' : new Date(Date.now() + 330 * 86400000).toISOString().slice(0, 10));
     return `<section class="canvas-panel"><div class="section-heading"><h2>${data.mode === 'demo' ? 'Fictional Canvas account' : 'Your Canvas account'}</h2><button data-canvas-action="logout" ${busy ? 'disabled' : ''}>Sign out</button></div>

@@ -113,6 +113,16 @@ test('restoring a page reloads durable progress and supersedes its previously sc
   assert.equal(h.timers.size, 0);
 });
 
+test('a resumed import displays its saved calendar range and scope instead of older defaults', async t => {
+  const h = harness(t);
+  await h.load(account({ job: { id: 'resumed-job', running: true, completed: 1, total: 3,
+    range: { start: '2026-08-01', end: '2027-07-31' }, includeCompleted: false } }));
+  const html = h.ui.view();
+  assert.match(html, /name="start" value="2026-08-01" disabled/);
+  assert.match(html, /name="end" value="2027-07-31" disabled/);
+  assert.match(html, /value="available" selected/);
+});
+
 test('a late cloud step response cannot restart polling or restore private courses after logout', async t => {
   const h = harness(t);
   const job = { id: 'late-step-job', running: true, completed: 0, total: 1 };
