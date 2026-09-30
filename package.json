@@ -4,12 +4,21 @@
   "private": true,
   "description": "A school study hub with a private, read-only Canvas sync backend.",
   "type": "module",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "pnpm@11.19.0",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "sync:canvas": "node scripts/sync-canvas.js",
     "check": "node scripts/check.js",
     "test": "node --test"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.0"
+  },
+  "devDependencies": {
+    "vercel": "60.1.3"
   }
 }

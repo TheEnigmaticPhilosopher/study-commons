@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { readConfig } from './lib/config.js';
 import { createStore } from './lib/store.js';
 import { createApi } from './lib/api.js';
+import { createCloudApi } from './lib/cloud-api.js';
+import { createBlobStore } from './lib/blob-store.js';
 
 // Only public assets are served. Source, configuration and secrets stay private.
 const assets = new Map([
@@ -17,9 +19,10 @@ const assets = new Map([
   ['/canvas-account.js', ['canvas-account.js', 'text/javascript; charset=utf-8']],
 ]);
 
-export function createAppServer({ config = readConfig({}), store = createStore(), fetcher } = {}) {
-  const api = createApi(config, store, { fetcher });
-  const server = createServer(async (request, response) => {
+export function createAppHandler({ config = readConfig({}), store, fetcher } = {}) {
+  store ||= config.storageDriver === 'blob' ? createBlobStore({ token: config.blobToken, storeId: config.blobStoreId }) : createStore();
+  const api = (config.storageDriver === 'blob' ? createCloudApi : createApi)(config, store, { fetcher });
+  const handler = async (request, response) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.setHeader('Cache-Control', 'no-cache');
@@ -46,17 +49,24 @@ export function createAppServer({ config = readConfig({}), store = createStore()
     } catch {
       response.writeHead(500).end('Unable to load this page');
     }
-  });
-  server.on('close', () => { api.close(); store.close(); });
+  };
+  handler.close = () => { api.close(); store.close(); };
+  return handler;
+}
+
+export function createAppServer(options) {
+  const handler = createAppHandler(options);
+  const server = createServer(handler);
+  server.on('close', () => handler.close());
   server.requestTimeout = 150000;
   return server;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  try { process.loadEnvFile(); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (!process.env.VERCEL) { try { process.loadEnvFile(); } catch (error) { if (error.code !== 'ENOENT') throw error; } }
   const config = readConfig();
   const { port } = config;
-  const server = createAppServer({ config, store: createStore(config.dbPath) });
+  const server = createAppServer({ config, store: config.storageDriver === 'blob' ? undefined : createStore(config.dbPath) });
   server.listen(port, '0.0.0.0', () => console.log(`Study Commons running at http://localhost:${port}`));
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => server.close());
 }

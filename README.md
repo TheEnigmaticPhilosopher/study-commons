@@ -1,12 +1,12 @@
 # Study Commons
 
-A school course hub with a private, read-only Canvas backend. Plain HTML, CSS, JavaScript and Node.js; no third-party runtime packages or build step.
+A school course hub with a private, read-only Canvas backend. Plain HTML, CSS, JavaScript and Node.js. Local storage uses SQLite; Vercel deployments use private Blob storage.
 
 The Canvas pilot discovers your available and completed courses and adds them to a private dashboard with their original modules and resource links. It works with fictional fixtures or your own Canvas account. A private pilot login protects synced content. The general school catalog remains public example content. Hub discussions, example dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
 
 ## Run locally
 
-Use Node.js **22.13 or newer** (Node 24 recommended). The built-in SQLite module may display an experimental warning on some Node versions.
+Use Node.js **24**. Run `pnpm install --frozen-lockfile` to install dependencies.
 
 1. Copy `.env.example` to `.env` if you do not already have local settings.
 2. Set `HUB_ADMIN_PASSWORD` to a unique password of at least 16 characters.
@@ -27,16 +27,20 @@ Sync is manual: use **Sync all Canvas courses** after Canvas changes. A progress
 
 A personal token is for your own development test. A school rollout needs school approval and Canvas OAuth; this starter does not provide multiuser Canvas authentication. [Canvas authentication documentation](https://developerdocs.instructure.com/services/canvas/oauth2/file.oauth).
 
+## Vercel
+
+Follow the [Vercel personal-pilot guide](docs/vercel-pilot.md). Cloud deployments use persistent private storage and sessions, with resumable imports that process one course per request. Every `.env` file and local database is excluded from deployment. Production credentials belong in Vercel server secrets.
+
 ## Replit
 
 1. Import this GitHub repository or its source ZIP into Replit.
-2. Use Node 22.13+ and run command `node server.js`; there is no build command.
+2. Use Node 24, install dependencies, and use run command `node server.js`; there is no build command.
 3. Add the settings from `.env.example` to **Replit Secrets**. Keep the workspace private when using real course data.
 4. Set `APP_ORIGIN` to the exact HTTPS address at which you open the running app (scheme and hostname, no path). Preview and published addresses differ.
 5. Run, open the app in its own tab, then sign in and sync. The app blocks embedding in other sites, so use the standalone tab for this pilot.
 6. For a disposable published demonstration, use a **single instance**. Set the published `APP_ORIGIN` and deployment secrets before running.
 
-SQLite saves snapshots and unit links in `data/study-commons.sqlite` on that machine. **The current backend is a single-process pilot.** Sessions are held in memory and end on restart. Do not use multiple Autoscale instances: each would have different sessions and local data. Replit deployment filesystems are not a durable database; a deployment can lose saved mappings and snapshots. Use a persistent database (such as PostgreSQL), shared sessions, and school sign-in before a lasting school deployment. Publishing does not copy your workspace's synced data into a durable service.
+SQLite saves snapshots and unit links in `data/study-commons.sqlite` on that machine. **The SQLite backend is a single-process pilot.** Sessions are held in memory and end on restart. Do not use multiple Autoscale instances: each would have different sessions and local data. Replit deployment filesystems are not a durable database; a deployment can lose saved mappings and snapshots. Use persistent storage, shared sessions, and school sign-in before a lasting school deployment. Publishing does not copy your workspace's synced data into a durable service.
 
 The backend cannot run as a static-only website. This repository has not been deployed to your Replit account.
 

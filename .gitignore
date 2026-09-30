@@ -10,3 +10,8 @@ data/
 *.sqlite-*
 *.db
 *.db-*
+.vercel/
+dist/
+
+.vercel
+.env*

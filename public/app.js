@@ -51,7 +51,7 @@ function courseCard(course, catalog = false) {
 
 function courseHeader(course, section) {
   const joined = state.joined.includes(course.id);
-  return `<div class="page-heading"><div><p class="eyebrow">${e(school.name)} / ${e(course.department)}</p><h1>${e(course.name)}</h1></div>
+  return `<div class="page-heading"><div><p class="eyebrow">Example school library / ${e(course.department)}</p><h1>${e(course.name)}</h1></div>
     <button type="button" class="subtle" data-action="join" data-course="${e(course.id)}" aria-pressed="${joined}">${joined ? 'Remove from dashboard' : '+ Add to dashboard'}</button></div>
     <nav class="course-tabs" aria-label="Course sections"><a href="${courseHref(course)}" ${section !== 'discussions' ? 'aria-current="page"' : ''}>Resources</a><a href="${courseHref(course, 'discussions')}" ${section === 'discussions' ? 'aria-current="page"' : ''}>Discussions</a></nav>`;
 }
@@ -102,12 +102,12 @@ function discussionsView(course) {
 
 function render() {
   const { page, course, section } = route();
-  navigation.innerHTML = `<a href="#dashboard" ${page === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a><a href="#catalog" ${page === 'catalog' ? 'aria-current="page"' : ''}>School courses</a><p class="nav-label">My courses</p>${state.joined.map(id => courses.find(item => item.id === id)).filter(Boolean).map(item => `<a href="${courseHref(item)}" ${course?.id === item.id ? 'aria-current="page"' : ''}>${e(item.name)}</a>`).join('')}`;
+  navigation.innerHTML = `<a href="#dashboard" ${page === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>${canvas.navView()}<p class="nav-label">Example school library</p><a href="#catalog" ${page === 'catalog' ? 'aria-current="page"' : ''}>Example course catalog</a><p class="nav-label">Selected example courses</p>${state.joined.map(id => courses.find(item => item.id === id)).filter(Boolean).map(item => `<a href="${courseHref(item)}" ${course?.id === item.id ? 'aria-current="page"' : ''}>${e(item.name)}</a>`).join('')}`;
   if (page === 'dashboard') {
     const joined = courses.filter(item => state.joined.includes(item.id));
-    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>Your dashboard</h1><p class="muted">Your courses, resources and conversations.</p></div><a class="button primary" href="#catalog">+ Add a course</a></div>${joined.length ? `<div class="course-grid">${joined.map(item => courseCard(item)).join('')}</div>` : '<div class="empty"><h2>Choose your courses</h2><p>Add courses from the school catalog to make this dashboard yours.</p><a class="button" href="#catalog">Browse school courses</a></div>'}`;
+    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>Example school library</h1><p class="muted">These sample courses illustrate the study hub. <a href="#canvas">Open your private Canvas connection</a> to view or import your courses.</p></div><a class="button primary" href="#catalog">+ Add an example course</a></div>${joined.length ? `<div class="course-grid">${joined.map(item => courseCard(item)).join('')}</div>` : '<div class="empty"><h2>Choose example courses</h2><p>Add sample courses from the example catalog to explore the study hub.</p><a class="button" href="#catalog">Browse example courses</a></div>'}`;
   } else if (page === 'catalog') {
-    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>School courses</h1><p class="muted">Example catalog · choose the courses you take.</p></div></div><div class="course-grid">${courses.map(item => courseCard(item, true)).join('')}</div>`;
+    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>Example course catalog</h1><p class="muted">Sample courses for exploring the study hub.</p></div></div><div class="course-grid">${courses.map(item => courseCard(item, true)).join('')}</div>`;
   } else if (page === 'course' && course) {
     main.innerHTML = courseHeader(course, section) + (section === 'discussions' ? discussionsView(course) : resourcesView(course));
   } else if (page === 'canvas') {
@@ -122,8 +122,6 @@ function render() {
     const examples = main.innerHTML;
     main.innerHTML = `<div class="page-heading"><div><h1>${page === 'dashboard' ? 'Your dashboard' : 'Your course resources'}</h1><p class="muted">Courses and materials linked to your private Canvas connection.</p></div></div>` + canvas.dashboardView() + `<details class="library-examples"><summary>Example school library</summary>${examples}</details>`;
   }
-  navigation.insertAdjacentHTML('afterbegin', canvas.navView());
-  navigation.insertAdjacentHTML('beforeend', `<p class="nav-label">Connections</p><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>`);
 }
 
 function openQuestionForm(unitId = '') {
