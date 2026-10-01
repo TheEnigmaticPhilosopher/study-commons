@@ -161,6 +161,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
     if (action === 'sync' || action === 'sync-all') { start = values.start; end = values.end; scenario = values.scenario || 'original'; }
     if (action === 'sync-all') includeCompleted = values.scope === 'all';
     busy = true; error = ''; onChange();
+    const submissionGeneration = generation;
     try {
       if (action === 'login') {
         await api('login', { password: values.password });
@@ -171,6 +172,11 @@ export function createCanvasUi({ courses, onChange, notice }) {
         data = await api('canvas/sync', { start, end, scenario }); notice('Canvas snapshot saved.');
       } else if (action === 'sync-all') {
         data = await api('canvas/sync-all', { start, end, includeCompleted }); importPaused = false; schedulePoll(); notice('Canvas course import started.');
+      } else if (action === 'grades') {
+        const result = await api('canvas/grades', { courseId: canvasCourseId });
+        if (submissionGeneration !== generation || !session?.authenticated || !data) return;
+        data = { ...data, grades: { ...data.grades, [result.courseId]: result.grades } };
+        notice(result.grades.status === 'synced' ? 'Your posted Canvas grades were refreshed.' : 'Canvas did not make these grades available.');
       } else if (action === 'course-mapping') {
         data = await api('canvas/course-mapping', { courseId: canvasCourseId, eventId, moduleId: values.moduleId }); notice('Teaching event linked to its Canvas module.');
       } else if (action === 'mapping') {
@@ -179,6 +185,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
       }
     } catch (caught) {
       error = caught.message;
+      if (action === 'grades') notice(`Grade refresh failed: ${caught.message} Any saved grades keep their previous timestamp.`);
       if (['sync', 'sync-all'].includes(action) && session?.authenticated) { try { data = await api('canvas'); schedulePoll(); } catch { data = null; } }
     } finally { busy = false; onChange(); }
   });

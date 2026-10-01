@@ -121,6 +121,20 @@ button:disabled { opacity: .6; cursor: wait; }
 .canvas-progress { padding: 14px; background: var(--soft); border-radius: 7px; margin-top: 16px; }
 .library-examples { margin-top: 24px; }
 .library-examples > summary { margin-bottom: 18px; color: var(--muted); }
+.grade-summary { display: flex; flex-wrap: wrap; gap: 32px; padding: 20px; margin: 16px 0; background: var(--soft); border-radius: 8px; }
+.grade-value { font-size: 2rem; font-weight: 700; margin: 8px 0; }
+.grade-list { margin: 24px 0; }
+.grade-list > summary { font-weight: 600; padding: 12px 0; }
+.table-scroll { overflow-x: auto; }
+.table-scroll table { width: 100%; border-collapse: collapse; text-align: left; }
+.table-scroll th, .table-scroll td { padding: 12px; border-bottom: 1px solid var(--line); }
+.canvas-panel h3 { margin-top: 26px; }
+.private-course-nav > summary { padding: 12px 8px; font-size: .85rem; cursor: pointer; }
+.private-course-nav[open] { max-height: 50vh; overflow: auto; }
+.private-course-nav a { display: block; }
+.exam-library { padding: 24px; margin: 0 0 24px; border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--soft); border-radius: 8px; }
+.exam-library h2 { margin: 6px 0 12px; }
+.exam-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); padding-left: 20px; gap: 16px 32px; margin: 20px 0; }
 @media (max-width: 900px) { .app-shell { grid-template-columns: 180px minmax(0, 1fr); } main { padding: 25px; } .course-grid { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
   .app-shell { grid-template-columns: minmax(0, 1fr); }

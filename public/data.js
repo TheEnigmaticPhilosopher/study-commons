@@ -1,68 +1,25 @@
-// Customize this file with your school's name, courses, modules and resources.
-// IDs must be unique and stable. They connect saved activity to courses and units.
-// These are EXAMPLE courses, not a verified catalog for any particular school.
+import { courseNames } from './course-names.js';
+import { courseSlug, resourcesFor, subjectFor, topics } from './library.js';
 export const school = {
-  name: 'Your School',
-  storageKey: 'study-commons-demo-v1',
-  defaultCourseIds: ['ap-chemistry', 'english-10'],
+  name: 'Pacifica Christian · Student pilot', storageKey: 'study-commons-school-v2',
+  defaultCourseIds: ['ap-calculus-ab', 'ap-chemistry', 'ap-biology'],
 };
-
-const chemistryTopics = [
-  'Atoms & periodic trends', 'Bonding & compound structure', 'Substances & mixtures',
-  'Chemical change', 'Reaction rates', 'Heat & chemical energy', 'Chemical equilibrium',
-  'Acids, bases & buffers', 'Entropy, free energy & electrochemistry',
-];
-
-export const courses = [
-  {
-    id: 'ap-chemistry', name: 'AP Chemistry', department: 'Science', shortName: 'CH',
-    description: 'Notes, practice and discussions organized across nine units.',
-    units: chemistryTopics.map((title, index) => ({ id: `unit-${index + 1}`, title: `Unit ${index + 1}: ${title}` })),
-    links: [
-      { title: 'Official released FRQs & scoring materials', url: 'https://apcentral.collegeboard.org/courses/ap-chemistry/exam/past-exam-questions' },
-      { title: 'College Board course framework', url: 'https://apcentral.collegeboard.org/courses/ap-chemistry' },
-    ],
-    resources: [
-      {
-        id: 'chem-buffer-notes', unitId: 'unit-8', title: 'Understanding what a buffer does',
-        type: 'Notes', source: 'Example course notes',
-        text: 'A buffer contains a weak acid and its conjugate base, or a weak base and its conjugate acid. The conjugate base consumes small additions of strong acid; the weak acid consumes small additions of strong base. A buffer resists a change in pH within its capacity. Its pH does not have to be 7.',
-      },
-    ],
-    questions: [
-      {
-        id: 'chem-question-buffer', unitId: 'unit-8', title: 'How can a buffer contain an acid and still resist pH changes?',
-        body: 'I understand that it contains a weak acid and its conjugate base. What happens when a small amount of strong acid is added?',
-        author: 'Maya · example', answered: true, mine: false,
-        replies: [
-          { author: 'Alex · example', body: 'The conjugate base reacts with the added acid. A small addition causes a relatively small change in pH while the buffer has sufficient capacity.' },
-          { author: 'Maya · example', body: 'That helps — it is resisting a change in pH, rather than having to be neutral.' },
-        ],
-      },
-      {
-        id: 'chem-question-equilibrium', unitId: 'unit-7', title: 'When should we use an ICE table?',
-        body: 'How do you decide whether an equilibrium problem needs an ICE table or can be solved directly from the given concentrations?',
-        author: 'Jordan · example', answered: false, mine: false, replies: [],
-      },
-    ],
-  },
-  {
-    id: 'english-10', name: 'English 10', department: 'English', shortName: 'EN',
-    description: 'Reading, discussion and writing resources for your class.',
-    units: [{ id: 'reading', title: 'Close reading' }, { id: 'argument', title: 'Argument & evidence' }, { id: 'revision', title: 'Writing & revision' }],
-    links: [],
-    resources: [{ id: 'english-evidence', unitId: 'argument', title: 'Building a paragraph around evidence', type: 'Notes', source: 'Example course notes', text: 'Start with a claim that supports your argument. Introduce relevant evidence and explain how it supports the claim. End by connecting the paragraph to your larger argument. A quotation needs analysis, not just a citation.' }],
-    questions: [],
-  },
-  {
-    id: 'algebra-2', name: 'Algebra II', department: 'Mathematics', shortName: 'A2',
-    description: 'A sample course ready for your school’s topics and resources.',
-    units: [{ id: 'functions', title: 'Functions & graphs' }, { id: 'polynomials', title: 'Polynomial expressions' }, { id: 'exponentials', title: 'Exponents & logarithms' }],
-    links: [], resources: [], questions: [],
-  },
-  {
-    id: 'ap-biology', name: 'AP Biology', department: 'Science', shortName: 'BI',
-    description: 'Replace this starter outline with your school’s course structure.',
-    units: [], links: [], resources: [], questions: [],
-  },
-];
+const chemistryTopics = ['Atomic structure and properties', 'Compound structure and properties', 'Properties of substances and mixtures', 'Chemical reactions', 'Kinetics', 'Thermochemistry', 'Equilibrium', 'Acids and bases', 'Thermodynamics and electrochemistry'];
+const chemistryChapters = [[2, 'Atoms, molecules and ions'], [7, 'Chemical bonding and molecular geometry'], [10, 'Liquids and solids'], [4, 'Stoichiometry of chemical reactions'], [12, 'Kinetics'], [5, 'Thermochemistry'], [13, 'Fundamental equilibrium concepts'], [14, 'Acid–base equilibria'], [16, 'Thermodynamics']];
+export const courses = courseNames.map(name => {
+  const id = courseSlug(name); const subject = subjectFor(name);
+  const curated = resourcesFor(name);
+  const units = id === 'ap-chemistry' ? chemistryTopics.map((title, index) => ({ id: `unit-${index + 1}`, title: `Unit ${index + 1}: ${title}` }))
+    : topics.filter(topic => topic.subject === subject).map(topic => ({ id: topic.id, title: topic.title }));
+  units.push({ id: 'reference', title: 'Course reference library' });
+  return { id, name, department: subject === 'ushistory' ? 'U.S. History' : subject ? subject[0].toUpperCase() + subject.slice(1) : 'School activities',
+    shortName: name.split(/\s+/).filter(word => /^[a-z]/i.test(word)).slice(0, 2).map(word => word[0].toUpperCase()).join(''),
+    description: /summer|202[0-9]|semester/i.test(name) ? 'From the Canvas pilot, including historical and summer courses.' : 'School course name from the Canvas pilot. Independently curated public resources.',
+    units, links: [], questions: [], resources: [
+      ...(id === 'ap-chemistry' ? [...chemistryChapters.map(([chapter, title], index) => ({ id: `chem-chapter-${chapter}`, unitId: `unit-${index + 1}`, title: `${title}: chapter and exercises`, url: `https://openstax.org/books/chemistry-2e/pages/${chapter}-introduction`, type: 'Open reading', source: 'OpenStax Chemistry 2e · free online · see edition license' })), { id: 'chem-chapter-17', unitId: 'unit-9', title: 'Electrochemistry: chapter and exercises', url: 'https://openstax.org/books/chemistry-2e/pages/17-introduction', type: 'Open reading', source: 'OpenStax Chemistry 2e · free online · see edition license' }] : []),
+      ...curated.map((item, index) => ({ ...item, source: `${item.source} · ${item.rights}`, id: `${id}-reference-${index}`, unitId: 'reference' })),
+      ...topics.filter(topic => topic.subject === subject).map(topic => ({ id: `${id}-${topic.id}`, title: `${topic.title}: lesson and exercises`,
+        unitId: id === 'ap-chemistry' ? ({ buffers: 'unit-8', equilibrium: 'unit-7', 'rate-laws': 'unit-5' }[topic.id] || 'reference') : topic.id,
+        url: topic.url, type: 'Practice', source: 'OpenStax · free online · see edition license' })),
+    ] };
+});

@@ -1,8 +1,9 @@
 import { escapeHTML as e, safeUrl } from './state.js';
+import { gradesView, gradeLabel, publicResourcesView } from './study.js';
 
 const link = (url, title) => safeUrl(url) ? `<a href="${e(safeUrl(url))}" target="_blank" rel="noopener noreferrer">${e(title)} ↗</a>` : e(title);
 const href = (id, section = 'modules') => `#canvas-course/${encodeURIComponent(id)}/${section}`;
-const labels = { modules: 'Modules', assignments: 'Assignments', pages: 'Pages', files: 'Files', announcements: 'Announcements', discussions: 'Discussions', quizzes: 'Quizzes', events: 'Calendar' };
+const labels = { grades: 'Grades & study plan', resources: 'Public resources', modules: 'Modules', assignments: 'Assignments', pages: 'Pages', files: 'Files', announcements: 'Announcements', discussions: 'Discussions', quizzes: 'Quizzes', events: 'Calendar' };
 function format(value, zone = 'UTC', allDay = false) {
   if (!value) return 'No date supplied';
   try { return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: allDay ? 'UTC' : zone }).format(new Date(value)); }
@@ -15,7 +16,7 @@ function eventDate(event, zone) {
 }
 export function accountNav(data) {
   const courses = data?.account?.snapshot?.courses;
-  return courses ? `<p class="nav-label">Canvas courses</p>${courses.map(item => `<a href="${href(item.course.id)}">${e(item.course.name)}</a>`).join('')}` : '';
+  return courses ? `<details class="private-course-nav"><summary>Private Canvas courses (${courses.length})</summary>${courses.map(item => `<a href="${href(item.course.id)}">${e(item.course.name)}</a>`).join('')}</details>` : '';
 }
 export function accountCards(data) {
   const snapshot = data?.account?.snapshot;
@@ -25,6 +26,7 @@ export function accountCards(data) {
     ${snapshot.courses.length ? `<div class="course-grid">${snapshot.courses.map(item => `<article class="course-card"><div class="course-band"><span class="course-monogram">${e(item.course.code || 'Canvas')}</span><span>${e(item.course.term || item.course.state)}</span></div>
       <div class="course-content"><h2><a href="${href(item.course.id)}">${e(item.course.name)}</a></h2><p class="muted">Linked directly to Canvas course ${e(item.course.id)}.</p>
       <p class="course-meta">${item.modules.length} modules · ${item.assignments.length} assignments · ${item.files.length} files</p>
+      <p><a href="${href(item.course.id, 'grades')}">${e(gradeLabel(data.grades?.[item.course.id]))} · Study plan</a></p>
       ${item.warnings.length ? '<p class="canvas-alert">Some categories could not be refreshed. Open the course for details.</p>' : ''}
       <div class="actions"><a class="button primary" href="${href(item.course.id)}">Open resources</a>${link(item.course.url, 'Canvas')}</div></div></article>`).join('')}</div>` : '<p class="empty">Canvas returned no available courses for the selected scope.</p>'}</section>`;
 }
@@ -36,7 +38,9 @@ export function accountCourseView(data, courseId, section = 'modules', busy = fa
   const status = record.collections[section];
   const resource = item => `<li class="canvas-resource">${link(item.url, item.title)}<p class="meta">${e(item.type)}${item.locked ? ' · Locked in Canvas' : ''}${item.dueAt ? ` · Due ${e(format(item.dueAt, course.timeZone))}` : ''}${item.unlockAt ? ` · Opens ${e(format(item.unlockAt, course.timeZone))}` : ''}</p></li>`;
   let body;
-  if (section === 'modules') {
+  if (section === 'grades') body = gradesView(record, data.grades?.[courseId], busy);
+  else if (section === 'resources') body = publicResourcesView(course.name);
+  else if (section === 'modules') {
     body = record.modules.length ? `<div class="units">${record.modules.map((module, index) => {
       const mapped = data.account.mappings.filter(item => item.courseId === courseId && item.moduleId === module.id).map(item => item.eventId);
       const events = record.events.filter(event => mapped.includes(event.id));
@@ -60,7 +64,7 @@ export function accountCourseView(data, courseId, section = 'modules', busy = fa
     <p class="meta">Last complete course sync: ${record.syncedAt ? e(new Date(record.syncedAt).toLocaleString()) : 'Not yet complete'}.</p>
     ${data.account.lastError ? `<p class="canvas-alert">Account sync failed: ${e(data.account.lastError)}. Showing saved content.</p>` : ''}
     ${record.warnings.length ? `<details class="canvas-alert"><summary>Some content could not be refreshed (${record.warnings.length} categories)</summary><ul>${record.warnings.map(warning => `<li>${e(warning)}</li>`).join('')}</ul></details>` : ''}
-    <nav class="course-tabs canvas-tabs" aria-label="Canvas course sections">${Object.entries(labels).map(([key, label]) => `<a href="${href(courseId, key)}" ${section === key ? 'aria-current="page"' : ''}>${label} (${record[key].length})</a>`).join('')}</nav>
-    ${status?.status !== 'synced' ? `<p class="canvas-alert">${e(labels[section])}: ${e(status?.error || 'Not refreshed yet')}${status?.syncedAt ? ` Saved data from ${e(new Date(status.syncedAt).toLocaleString())} is shown.` : ''}</p>` : `<p class="meta">Refreshed ${e(new Date(status.syncedAt).toLocaleString())}. Links open the original material in Canvas.</p>`}
+    <nav class="course-tabs canvas-tabs" aria-label="Canvas course sections">${Object.entries(labels).map(([key, label]) => `<a href="${href(courseId, key)}" ${section === key ? 'aria-current="page"' : ''}>${label}${Array.isArray(record[key]) ? ` (${record[key].length})` : ''}</a>`).join('')}</nav>
+    ${['grades', 'resources'].includes(section) ? '' : status?.status !== 'synced' ? `<p class="canvas-alert">${e(labels[section])}: ${e(status?.error || 'Not refreshed yet')}${status?.syncedAt ? ` Saved data from ${e(new Date(status.syncedAt).toLocaleString())} is shown.` : ''}</p>` : `<p class="meta">Refreshed ${e(new Date(status.syncedAt).toLocaleString())}. Links open the original material in Canvas.</p>`}
     ${body}`;
 }

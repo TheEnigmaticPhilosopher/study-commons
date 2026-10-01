@@ -17,6 +17,9 @@ const assets = new Map([
   ['/state.js', ['state.js', 'text/javascript; charset=utf-8']],
   ['/canvas.js', ['canvas.js', 'text/javascript; charset=utf-8']],
   ['/canvas-account.js', ['canvas-account.js', 'text/javascript; charset=utf-8']],
+  ['/course-names.js', ['course-names.js', 'text/javascript; charset=utf-8']],
+  ['/library.js', ['library.js', 'text/javascript; charset=utf-8']],
+  ['/study.js', ['study.js', 'text/javascript; charset=utf-8']],
 ]);
 
 export function createAppHandler({ config = readConfig({}), store, fetcher } = {}) {

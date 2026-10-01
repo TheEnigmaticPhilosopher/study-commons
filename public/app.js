@@ -1,10 +1,12 @@
 import { school, courses } from './data.js';
 import { createInitialState, loadState, saveState, safeUrl, parseRoute, escapeHTML as e } from './state.js';
 import { createCanvasUi } from './canvas.js';
+import { pastPapersView } from './study.js';
 
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
 let state = storage ? loadState(storage, courses, school) : createInitialState(courses, school);
+let catalogQuery = '';
 let expandedQuestionId = '';
 let noticeTimer;
 const main = document.getElementById('main');
@@ -43,7 +45,7 @@ function courseCard(course, catalog = false) {
   return `<article class="course-card">
     <div class="course-band"><span class="course-monogram" aria-hidden="true">${e(course.shortName)}</span><span>${e(course.department)}</span></div>
     <div class="course-content"><h2><a href="${courseHref(course)}">${e(course.name)}</a></h2><p class="muted">${e(course.description)}</p>
-    <p class="course-meta">${course.units.length ? `${course.units.length} modules` : 'Course outline coming soon'}</p>
+    <p class="course-meta">${course.resources.length} public resource ${course.resources.length === 1 ? 'link' : 'links'} · ${course.units.length} library ${course.units.length === 1 ? 'section' : 'sections'}</p>
     <div class="actions"><a class="button" href="${courseHref(course)}">Open course</a>
     ${catalog ? `<button type="button" class="${joined ? 'subtle' : 'primary'}" data-action="join" data-course="${e(course.id)}" aria-pressed="${joined}">${joined ? 'Remove from dashboard' : '+ Add to dashboard'}</button>` : `<a href="${courseHref(course, 'discussions')}">Discussions</a>`}</div></div>
   </article>`;
@@ -51,16 +53,16 @@ function courseCard(course, catalog = false) {
 
 function courseHeader(course, section) {
   const joined = state.joined.includes(course.id);
-  return `<div class="page-heading"><div><p class="eyebrow">Example school library / ${e(course.department)}</p><h1>${e(course.name)}</h1></div>
+  return `<div class="page-heading"><div><p class="eyebrow">School resource library / ${e(course.department)}</p><h1>${e(course.name)}</h1></div>
     <button type="button" class="subtle" data-action="join" data-course="${e(course.id)}" aria-pressed="${joined}">${joined ? 'Remove from dashboard' : '+ Add to dashboard'}</button></div>
     <nav class="course-tabs" aria-label="Course sections"><a href="${courseHref(course)}" ${section !== 'discussions' ? 'aria-current="page"' : ''}>Resources</a><a href="${courseHref(course, 'discussions')}" ${section === 'discussions' ? 'aria-current="page"' : ''}>Discussions</a></nav>`;
 }
 
 function resourcesView(course) {
   const suggestions = state.suggestions.filter(suggestion => suggestion.courseId === course.id);
-  return `<div class="resource-links">${course.links.map(item => link(item.url, item.title)).join('')}</div>
+  return `${pastPapersView(course.name)}<div class="resource-links">${course.links.map(item => link(item.url, item.title)).join('')}</div>
     ${course.units.length ? `<div class="units">${course.units.map((unit, index) => {
-      const resources = course.resources.filter(resource => resource.unitId === unit.id);
+      const resources = course.resources.filter(resource => resource.unitId === unit.id && resource.type !== 'Past exam');
       const resourceCount = resources.length + canvas.resourceCount(course.id, unit.id);
       return `<details class="unit" ${index === 0 ? 'open' : ''}><summary>${e(unit.title)}<span class="count">${resourceCount} ${resourceCount === 1 ? 'resource' : 'resources'}</span></summary>
         <div class="unit-content">${canvas.unitView(course.id, unit.id)}${resources.length ? resources.map(resource => resource.url
@@ -102,12 +104,12 @@ function discussionsView(course) {
 
 function render() {
   const { page, course, section } = route();
-  navigation.innerHTML = `<a href="#dashboard" ${page === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>${canvas.navView()}<p class="nav-label">Example school library</p><a href="#catalog" ${page === 'catalog' ? 'aria-current="page"' : ''}>Example course catalog</a><p class="nav-label">Selected example courses</p>${state.joined.map(id => courses.find(item => item.id === id)).filter(Boolean).map(item => `<a href="${courseHref(item)}" ${course?.id === item.id ? 'aria-current="page"' : ''}>${e(item.name)}</a>`).join('')}`;
+  navigation.innerHTML = `<a href="#dashboard" ${page === 'dashboard' ? 'aria-current="page"' : ''}>Dashboard</a><a href="#canvas" ${page === 'canvas' ? 'aria-current="page"' : ''}>Canvas connection</a>${canvas.navView()}<p class="nav-label">School resource library</p><a href="#catalog" ${page === 'catalog' ? 'aria-current="page"' : ''}>School course catalog</a><p class="nav-label">My public library</p>${state.joined.map(id => courses.find(item => item.id === id)).filter(Boolean).map(item => `<a href="${courseHref(item)}" ${course?.id === item.id ? 'aria-current="page"' : ''}>${e(item.name)}</a>`).join('')}`;
   if (page === 'dashboard') {
     const joined = courses.filter(item => state.joined.includes(item.id));
-    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>Example school library</h1><p class="muted">These sample courses illustrate the study hub. <a href="#canvas">Open your private Canvas connection</a> to view or import your courses.</p></div><a class="button primary" href="#catalog">+ Add an example course</a></div>${joined.length ? `<div class="course-grid">${joined.map(item => courseCard(item)).join('')}</div>` : '<div class="empty"><h2>Choose example courses</h2><p>Add sample courses from the example catalog to explore the study hub.</p><a class="button" href="#catalog">Browse example courses</a></div>'}`;
+    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>School resource library</h1><p class="muted">Public resources curated for courses from your school’s Canvas pilot. <a href="#canvas">Open your private Canvas connection</a> to view or import your courses.</p></div><a class="button primary" href="#catalog">+ Add a course</a></div>${joined.length ? `<div class="course-grid">${joined.map(item => courseCard(item)).join('')}</div>` : '<div class="empty"><h2>Choose your courses</h2><p>Add school courses to your dashboard for quick access to free study resources.</p><a class="button" href="#catalog">Browse school courses</a></div>'}`;
   } else if (page === 'catalog') {
-    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>Example course catalog</h1><p class="muted">Sample courses for exploring the study hub.</p></div></div><div class="course-grid">${courses.map(item => courseCard(item, true)).join('')}</div>`;
+    main.innerHTML = `<div class="page-heading"><div><p class="eyebrow">${e(school.name)}</p><h1>School course catalog</h1><p class="muted">46 course names from the Canvas pilot, including historical sections and summer work. This is a student-built library, not an official current course catalog.</p></div></div><form data-form="catalog-search" class="mapping-form"><label>Find a course<input name="query" type="search" value="${e(catalogQuery)}" placeholder="Calculus, Latin, chemistry…"></label><button>Search</button></form><p class="meta">${courses.filter(item => item.name.toLowerCase().includes(catalogQuery.toLowerCase())).length} matching courses · Free access does not always mean public domain. Licensing notes appear with each link.</p><div class="course-grid">${courses.filter(item => item.name.toLowerCase().includes(catalogQuery.toLowerCase())).map(item => courseCard(item, true)).join('')}</div>`;
   } else if (page === 'course' && course) {
     main.innerHTML = courseHeader(course, section) + (section === 'discussions' ? discussionsView(course) : resourcesView(course));
   } else if (page === 'canvas') {
@@ -118,9 +120,9 @@ function render() {
   } else {
     main.innerHTML = '<div class="empty"><h1>Page not found</h1><a class="button" href="#dashboard">Back to dashboard</a></div>';
   }
-  if (['dashboard', 'catalog'].includes(page) && canvas.hasAccount()) {
+  if (page === 'dashboard' && canvas.hasAccount()) {
     const examples = main.innerHTML;
-    main.innerHTML = `<div class="page-heading"><div><h1>${page === 'dashboard' ? 'Your dashboard' : 'Your course resources'}</h1><p class="muted">Courses and materials linked to your private Canvas connection.</p></div></div>` + canvas.dashboardView() + `<details class="library-examples"><summary>Example school library</summary>${examples}</details>`;
+    main.innerHTML = `<div class="page-heading"><div><h1>${page === 'dashboard' ? 'Your dashboard' : 'Your course resources'}</h1><p class="muted">Courses and materials linked to your private Canvas connection.</p></div></div>` + canvas.dashboardView() + `<details class="library-examples"><summary>School resource library</summary>${examples}</details>`;
   }
 }
 
@@ -131,6 +133,11 @@ function openQuestionForm(unitId = '') {
   form.elements.unitId.value = unitId;
   form.elements.title.focus();
 }
+
+document.addEventListener('submit', event => {
+  if (event.target.dataset.form !== 'catalog-search') return;
+  event.preventDefault(); catalogQuery = String(new FormData(event.target).get('query') || '').trim(); render();
+});
 
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-action]');
@@ -192,6 +199,7 @@ let pendingUnit = null;
 window.addEventListener('hashchange', () => {
   expandedQuestionId = '';
   render();
+  window.scrollTo(0, 0);
   if (pendingUnit !== null) { openQuestionForm(pendingUnit); pendingUnit = null; }
 });
 render();

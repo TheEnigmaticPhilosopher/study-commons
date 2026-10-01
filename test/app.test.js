@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createAppServer } from '../server.js';
-import { courses, school } from '../public/data.js';
+import { courses, school } from './demo-data.js';
 import { createInitialState, loadState, saveState, safeUrl, parseRoute, escapeHTML } from '../public/state.js';
 
 test('serves public assets while protecting project files and rejecting mutations', async t => {
