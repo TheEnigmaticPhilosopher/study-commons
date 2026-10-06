@@ -20,6 +20,8 @@ const assets = new Map([
   ['/course-names.js', ['course-names.js', 'text/javascript; charset=utf-8']],
   ['/library.js', ['library.js', 'text/javascript; charset=utf-8']],
   ['/study.js', ['study.js', 'text/javascript; charset=utf-8']],
+  ['/submit.html', ['submit.html', 'text/html; charset=utf-8']],
+  ['/submit.js', ['submit.js', 'text/javascript; charset=utf-8']],
 ]);
 
 export function createAppHandler({ config = readConfig({}), store, fetcher } = {}) {

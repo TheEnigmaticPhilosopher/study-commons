@@ -176,7 +176,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
         const result = await api('canvas/grades', { courseId: canvasCourseId });
         if (submissionGeneration !== generation || !session?.authenticated || !data) return;
         data = { ...data, grades: { ...data.grades, [result.courseId]: result.grades } };
-        notice(result.grades.status === 'synced' ? 'Your posted Canvas grades were refreshed.' : 'Canvas did not make these grades available.');
+        notice('Sample grades reset. Your real Canvas grades are not imported.');
       } else if (action === 'course-mapping') {
         data = await api('canvas/course-mapping', { courseId: canvasCourseId, eventId, moduleId: values.moduleId }); notice('Teaching event linked to its Canvas module.');
       } else if (action === 'mapping') {
@@ -185,7 +185,7 @@ export function createCanvasUi({ courses, onChange, notice }) {
       }
     } catch (caught) {
       error = caught.message;
-      if (action === 'grades') notice(`Grade refresh failed: ${caught.message} Any saved grades keep their previous timestamp.`);
+      if (action === 'grades') notice(`Sample grade reset failed: ${caught.message} Your class materials are unchanged.`);
       if (['sync', 'sync-all'].includes(action) && session?.authenticated) { try { data = await api('canvas'); schedulePoll(); } catch { data = null; } }
     } finally { busy = false; onChange(); }
   });
@@ -206,6 +206,13 @@ export function createCanvasUi({ courses, onChange, notice }) {
     }
   });
   window.addEventListener('pageshow', event => { if (event.persisted) refresh(); });
+  function linkedCourseView(name) {
+    if (!session?.authenticated) return '';
+    const matches = data?.account?.snapshot?.courses.filter(item => item.course.name.trim() === name.trim()) || [];
+    if (!matches.length) return '';
+    return `<section class="canvas-panel"><h2>Your real class materials</h2><p>These are the original imported Canvas courses. Grades in Study Commons are fictional demo values.</p><ul class="canvas-resource-list">${matches.map(item => `<li><a href="#canvas-course/${encodeURIComponent(item.course.id)}/modules">${e(item.course.name)} · ${e(item.course.term || 'Canvas course')}</a><p class="meta">${item.modules.length} modules · ${item.assignments.length} assignments · ${item.files.length} files</p></li>`).join('')}</ul></section>`;
+  }
   return { view, unitView, resourceCount, refresh, hasAccount: () => Boolean(data?.account?.snapshot),
+    linkedCourseView,
     dashboardView: () => accountCards(data), navView: () => accountNav(data), courseView: (id, section) => accountCourseView(data, id, section, busy) };
 }

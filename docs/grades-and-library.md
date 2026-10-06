@@ -1,23 +1,26 @@
-# School catalog and private grades
+# Real courses with sample grades
 
-The public library uses 46 distinct readable names from the authorized Canvas pilot snapshot. Historical sections and summer work are retained as named; this is not an official current school catalog. Seven unnamed records are omitted. The 64 original course records remain in private storage.
+The pilot preserves all 64 imported Canvas course records and their modules, assignments, pages, files, announcements, quizzes and original material links. Canvas permissions still determine which categories can be read. Course materials require the existing pilot sign-in; opening original resources may also require Canvas sign-in.
 
-`public/course-names.js` contains only the approved names. `public/library.js` supplies editorial resource links. No automatic public publication occurs during a Canvas import. New public names require an intentional source change. Licensing labels distinguish free access from public domain; links open publisher originals. Public outlines are curated library sections, not imported teaching schedules.
+The public library uses 46 distinct readable course names approved for publication. Historical sections and summer work retain their names; this is not an official current school catalog. Seven unnamed records are omitted from the public catalog. Signed-in public course pages link to the corresponding real Canvas course sections. Public resource links and official AP exam materials are independently curated.
 
-Authenticated `POST /api/canvas/grades` accepts an imported `courseId`. It resolves `/users/self/profile`, filters enrollments to that numeric user and StudentEnrollment, and requests assignments with `include[]=submission` (the requesting user's submission). Both enrollment and submission identities are checked again before normalization. Only posted scores are retained; unposted aggregates, identities, submission bodies and comments are dropped. Grade storage is separate from the Canvas metadata snapshot and SALTY feed. A 403/404 clears grades for that course; a transient failure preserves the prior timestamp. Grades refresh independently from materials.
+## All displayed grades are fictional
 
-The UI uses Canvas's whole-course `current_score` and `final_score`, not a recalculated weighted total. Final scores can include ungraded work as zero. Null is unavailable, never converted to zero. Check Canvas for current grading-period totals or school-specific policies.
+`lib/demo-grades.js` generates deterministic sample scores using only real course and assignment identifiers. It never reads actual grades. Assignment names and URLs remain real; scores and 100-point totals are invented. The API sets `gradeMode: demo`, and every sample grade record and assignment has `isDemo: true`. Dashboard cards, the grade view and study recommendations explicitly identify this demo data.
 
-Study suggestions match explicit assignment-title phrases against seven supported calculus/chemistry topics. Assignments naming multiple supported topics are excluded. Up to five latest eligible assignments form an unweighted percentage average for that topic; below 80% increases suggested practice from two to six. One assignment is labeled tentative. Missing, late, excused, unposted, superseded, zero-point and omitted assignments are excluded. Scores and titles cannot establish mastery or pinpoint mistakes inside a broad test. Other subjects have grades and public resources, but no automatic topic diagnosis yet. Related-rates practice includes six original problems and worked answers.
+Both the local and Vercel APIs generate sample grades directly from the metadata snapshot. They do not read the previous real-grade storage record. Authenticated `POST /api/canvas/grades` now resets sample grades without calling Canvas grade endpoints and replaces the old private grade record with an empty sample-only marker. Run `node scripts/sync-hosted-grades.js` after deployment to clear that record and verify all materials are unchanged. The script prints counts only. Material imports remain read-only Canvas operations and do not include submission grades.
 
-Public references checked September 30, 2026:
+Topic suggestions are illustrations based entirely on fictional scores, not assessments of the student's performance. Up to five matching single-topic assignments form a sample average; below 80% suggests six problems instead of two. Supported topics are related rates, chain rule, implicit differentiation, optimization, buffers, equilibrium constants and rate laws. Broadly named tests are not assigned invented topics. The related-rates panel includes six original practice problems and worked answers.
 
-- Canvas enrollments: https://developerdocs.instructure.com/services/canvas/resources/enrollments
-- Canvas own submission include: https://developerdocs.instructure.com/services/canvas/resources/assignments
-- Canvas posted scores: https://developerdocs.instructure.com/services/canvas/resources/submissions
-- AP released questions: https://apcentral.collegeboard.org/courses/past-exam-questions
-- Related-rates reading and exercises: https://openstax.org/books/calculus-volume-1/pages/4-1-related-rates
+## Publisher resources
 
-Official AP archives rechecked October 1, 2026. Each AP course has a prominent past-exam panel. Calculus AB and Chemistry include verified direct 2025/2026 question and scoring PDFs. Other subjects link their official archives. Ambiguous Computer Science/Economics course names show both exam variants and ask students to confirm the exam with their teacher. These are released FRQs/assessment materials, not a full multiple-choice exam bank.
+Each AP course has an official past-exam panel. Calculus AB and Chemistry include verified direct 2025/2026 question and scoring PDFs. Other subjects link official archives. Ambiguous Computer Science/Economics names show both exam variants and ask students to confirm the exam with their teacher. These are released FRQs/assessment materials, not a full multiple-choice bank. All nine AP Chemistry units include linked OpenStax readings. Publisher texts and exam papers are linked, not mirrored.
 
-All imported grades remain behind the existing single-owner pilot sign-in. This is not a multi-student authentication system. Do not share the owner password with visitors.
+References checked October 1, 2026:
+
+- AP archives: https://apcentral.collegeboard.org/courses/past-exam-questions
+- Calculus AB: https://apcentral.collegeboard.org/courses/ap-calculus-ab/exam/past-exam-questions
+- Chemistry: https://apcentral.collegeboard.org/courses/ap-chemistry/exam/past-exam-questions
+- Related rates: https://openstax.org/books/calculus-volume-1/pages/4-1-related-rates
+
+Grades and materials are never included in the public catalog or GitHub source. No automatic publication of new course names occurs during import. This remains a single-owner pilot, not a multi-student account system.

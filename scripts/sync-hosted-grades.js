@@ -17,20 +17,14 @@ async function call(path, body) {
 }
 await call('/api/login', { password: env.HUB_ADMIN_PASSWORD });
 try {
-  const { account, grades: savedGrades = {} } = await call('/api/canvas');
-  const counts = { courses: account.snapshot.courses.length, synced: 0, unavailable: 0, failed: 0, numericGrades: 0, postedAssignments: 0 };
-  for (const [index, item] of account.snapshot.courses.entries()) {
-    try {
-      const grades = process.argv.includes('--resume') && savedGrades[item.course.id] ? savedGrades[item.course.id]
-        : (await call('/api/canvas/grades', { courseId: item.course.id })).grades;
-      counts[grades.status === 'synced' ? 'synced' : 'unavailable']++;
-      if (typeof grades.currentScore === 'number') counts.numericGrades++;
-      counts.postedAssignments += grades.assignments.filter(item => typeof item.score === 'number').length;
-    } catch { counts.failed++; }
-    console.log(`Grade refresh ${index + 1}/${counts.courses}; ${counts.synced} accessible, ${counts.unavailable} unavailable, ${counts.failed} failed.`);
-  }
-  const saved = await call('/api/canvas');
-  assert.equal(Object.keys(saved.grades).length, counts.synced + counts.unavailable);
-  console.log(JSON.stringify({ verified: true, ...counts }));
-  if (counts.failed) process.exitCode = 1;
+  const before = await call('/api/canvas');
+  assert.equal(before.gradeMode, 'demo', 'Deploy the sample-grade release first.');
+  const first = before.account.snapshot.courses[0];
+  if (first) await call('/api/canvas/grades', {courseId:first.course.id});
+  const after = await call('/api/canvas');
+  assert.deepEqual(after.account, before.account, 'Class materials must be unchanged.');
+  const grades = Object.values(after.grades);
+  assert.ok(grades.every(item => item.isDemo && item.status === 'demo'));
+  assert.ok(grades.every(item => item.assignments.every(assignment => assignment.isDemo)));
+  console.log(JSON.stringify({verified:true,realCourses:after.account.snapshot.courses.length,sampleGradeCourses:grades.length,sampleAssignmentScores:grades.reduce((sum,item)=>sum+item.assignments.length,0),realGradeImportDisabled:true,oldGradeRecordReplaced:true}));
 } finally { await call('/api/logout', {}); }

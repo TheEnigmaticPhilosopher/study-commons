@@ -14,6 +14,12 @@
   color: var(--text);
   background: var(--bg);
 }
+.submission-main { max-width: 900px; }
+.submission-main .page-heading { margin-top: 24px; }
+.submission-main form > label { display: block; margin-top: 20px; }
+.submission-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; padding: 20px; background: var(--soft); border-radius: 8px; }
+.submission-consent input { width: auto; display: inline; margin-right: 8px; }
+button:disabled { opacity: .6; cursor: wait; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 a { color: var(--accent); text-decoration: none; }

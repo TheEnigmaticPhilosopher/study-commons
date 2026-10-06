@@ -86,29 +86,29 @@ function pilot({ fetcher = accountDemoFetch() } = {}) {
   return { config, store, instance, call, login, start, step, finish, advance(ms) { time += ms; } };
 }
 
-test('private grade refresh persists across instances, rejects outsiders and clears permission-revoked grades', async () => {
-  let denied = false; let fail = false;
+test('sample grades ignore stored real grades, clear the old record and never call Canvas grade endpoints', async () => {
+  let gradeRequests = 0;
   const fixture = accountDemoFetch();
   const hub = pilot({ fetcher: async (input, options) => {
     const url = new URL(input);
-    if (url.pathname.endsWith('/profile')) return Response.json({ id: 9 });
-    if (url.pathname.endsWith('/enrollments')) return denied || fail ? Response.json({}, { status: denied ? 403 : 503 }) : Response.json([{ course_id: 12345, user_id: 9, type: 'StudentEnrollment', grades: { current_score: 87 } }]);
-    if (url.searchParams.get('include[]') === 'submission') return Response.json([{ id: 91, name: 'Related rates', points_possible: 10, submission: { user_id: 9, posted_at: '2026-09-01T00:00:00Z', score: 6 } }]);
+    if (url.pathname.endsWith('/profile') || url.pathname.endsWith('/enrollments') || url.searchParams.get('include[]') === 'submission') { gradeRequests++; throw Error('Real grades must not be requested'); }
     return fixture(input, options);
   } });
   assert.equal((await hub.call(hub.instance(), 'canvas/grades', { body: { courseId: '12345' } })).status, 401);
   const cookie = await hub.login(); await hub.finish(cookie, await hub.start(cookie));
+  await hub.store.update('grades-' + hub.config.accountKey, () => ({snapshot: {'12345': {currentScore: 99.123456, privateNote: 'do-not-expose'}}}));
+  const before = (await hub.call(hub.instance(), 'canvas', {cookie})).data;
+  assert.equal(before.gradeMode, 'demo'); assert.equal(before.grades['12345'].isDemo, true);
+  assert.doesNotMatch(JSON.stringify(before), /99\.123456|do-not-expose/);
   assert.equal((await hub.call(hub.instance(), 'canvas/grades', { cookie, body: { courseId: '999' } })).status, 400);
   assert.equal((await hub.call(hub.instance(), 'canvas/grades', { cookie, origin: 'https://outsider.test', body: { courseId: '12345' } })).status, 403);
-  const update = () => hub.call(hub.instance(), 'canvas/grades', { cookie, body: { courseId: '12345' } });
-  assert.equal((await update()).data.grades.currentScore, 87);
-  assert.equal((await hub.call(hub.instance(), 'canvas', { cookie })).data.grades['12345'].assignments[0].score, 6);
-  fail = true; assert.notEqual((await update()).status, 200);
-  assert.equal((await hub.call(hub.instance(), 'canvas', { cookie })).data.grades['12345'].currentScore, 87);
-  denied = true; assert.equal((await update()).data.grades.status, 'unavailable');
-  assert.equal((await hub.call(hub.instance(), 'canvas', { cookie })).data.grades['12345'].assignments.length, 0);
-  await hub.call(hub.instance(), 'logout', { cookie, body: {} });
-  assert.equal((await hub.call(hub.instance(), 'canvas', { cookie })).status, 401);
+  const response = await hub.call(hub.instance(), 'canvas/grades', {cookie,body:{courseId:'12345'}});
+  assert.equal(response.data.grades.isDemo, true);
+  assert.equal((await hub.store.read('grades-' + hub.config.accountKey)).snapshot, null);
+  const after = (await hub.call(hub.instance(), 'canvas', {cookie})).data;
+  assert.deepEqual(after.account, before.account); assert.equal(gradeRequests,0);
+  await hub.call(hub.instance(), 'logout', {cookie,body:{}});
+  assert.equal((await hub.call(hub.instance(), 'canvas', {cookie})).status, 401);
 });
 
 test('cloud import resumes in fresh instances and publishes only a complete account snapshot', async () => {

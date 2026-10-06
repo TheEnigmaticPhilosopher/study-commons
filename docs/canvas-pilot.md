@@ -17,7 +17,7 @@ Canvas is the school's **LMS** (learning management system). The integration doe
 
 ## 2. Create and keep a private token
 
-In Canvas, go to Account → Settings → Approved Integrations and create a personal access token if your school enables that option. Use an expiration appropriate for your test. The token inherits your account's access. This app sends only GET requests to Canvas, but that does not make the token itself read-only.
+In Canvas, go to Account → Settings → Approved Integrations and create a personal access token if your school enables that option. Use an expiration appropriate for your test. The token inherits your account's access. Imports send only GET requests to Canvas. The separate assignment editor can send work after an explicit review and confirmation; see [Canvas submissions](canvas-submissions.md).
 
 If a key was exposed in chat or source code, revoke it and create a replacement. Do not send the replacement to another person or paste it into a repository.
 

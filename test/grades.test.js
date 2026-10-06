@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normalizeGrades } from '../lib/grades.js';
+import { demoGrades, demoGradeCatalog } from '../lib/demo-grades.js';
 import { createCanvasClient } from '../lib/canvas.js';
 import { studyPriorities, relatedRatesProblems, gradesView, pastPapersView } from '../public/study.js';
 import { resourcesFor } from '../public/library.js';
@@ -74,9 +75,23 @@ test('public catalog contains approved names and public links, no Canvas records
 });
 test('practice and private grade views escape assignment names and explain uncertainty', () => {
   assert.equal(relatedRatesProblems(6).length, 6); assert.equal(relatedRatesProblems().length, 2);
-  const grades = normalize([{ ...assignment, name: '<img src=x> Related rates' }]);
+  const grades = demoGrades({ course: { id: '1' }, assignments: [{ id: '2', title: '<img src=x> Related rates', url: 'https://canvas.example.test/courses/1/assignments/2' }] });
   const html = gradesView({ course: { id: '1', name: 'AP Calculus AB' } }, grades, false);
-  assert.doesNotMatch(html, /<img src=x>/); assert.match(html, /Tentative/); assert.match(html, /not a mastery score/);
+  assert.doesNotMatch(html, /<img src=x>/); assert.match(html, /Demo recommendation/); assert.match(html, /not a mastery score/);
+});
+
+test('sample grades preserve real assignment identity but cannot use actual grade fields', () => {
+  const record = { course: { id: '1', name: 'AP Calculus AB' }, assignments: [{ id: '2', title: 'Related rates', url: 'https://canvas.example.test/a', score: 99.123456, pointsPossible: 200 }], grades: { currentScore: 98.654321 } };
+  const grades = demoGrades(record);
+  assert.equal(grades.isDemo, true); assert.equal(grades.status, 'demo');
+  assert.equal(grades.assignments[0].title, record.assignments[0].title);
+  assert.equal(grades.assignments[0].url, record.assignments[0].url);
+  assert.equal(grades.assignments[0].pointsPossible, 100);
+  assert.equal(grades.assignments[0].score, 62);
+  assert.doesNotMatch(JSON.stringify(grades), /99\.123456|98\.654321/);
+  assert.equal(studyPriorities('AP Calculus AB', grades)[0].practiceCount, 6);
+  assert.deepEqual(demoGrades(record), grades);
+  assert.equal(Object.keys(demoGradeCatalog({ snapshot: { courses: [record] } })).length, 1);
 });
 
 test('each AP course links official past exams and AB/Chemistry offer paired paper and scoring PDFs', () => {

@@ -60,7 +60,7 @@ function courseHeader(course, section) {
 
 function resourcesView(course) {
   const suggestions = state.suggestions.filter(suggestion => suggestion.courseId === course.id);
-  return `${pastPapersView(course.name)}<div class="resource-links">${course.links.map(item => link(item.url, item.title)).join('')}</div>
+  return `${canvas.linkedCourseView(course.name)}${pastPapersView(course.name)}<div class="resource-links">${course.links.map(item => link(item.url, item.title)).join('')}</div>
     ${course.units.length ? `<div class="units">${course.units.map((unit, index) => {
       const resources = course.resources.filter(resource => resource.unitId === unit.id && resource.type !== 'Past exam');
       const resourceCount = resources.length + canvas.resourceCount(course.id, unit.id);

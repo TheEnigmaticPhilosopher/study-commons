@@ -3,7 +3,7 @@ import { gradesView, gradeLabel, publicResourcesView } from './study.js';
 
 const link = (url, title) => safeUrl(url) ? `<a href="${e(safeUrl(url))}" target="_blank" rel="noopener noreferrer">${e(title)} ↗</a>` : e(title);
 const href = (id, section = 'modules') => `#canvas-course/${encodeURIComponent(id)}/${section}`;
-const labels = { grades: 'Grades & study plan', resources: 'Public resources', modules: 'Modules', assignments: 'Assignments', pages: 'Pages', files: 'Files', announcements: 'Announcements', discussions: 'Discussions', quizzes: 'Quizzes', events: 'Calendar' };
+const labels = { grades: 'Sample grades & practice', resources: 'Public resources', modules: 'Modules', assignments: 'Assignments', pages: 'Pages', files: 'Files', announcements: 'Announcements', discussions: 'Discussions', quizzes: 'Quizzes', events: 'Calendar' };
 function format(value, zone = 'UTC', allDay = false) {
   if (!value) return 'No date supplied';
   try { return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: allDay ? 'UTC' : zone }).format(new Date(value)); }
@@ -36,7 +36,7 @@ export function accountCourseView(data, courseId, section = 'modules', busy = fa
   const course = record.course;
   if (!Object.hasOwn(labels, section)) section = 'modules';
   const status = record.collections[section];
-  const resource = item => `<li class="canvas-resource">${link(item.url, item.title)}<p class="meta">${e(item.type)}${item.locked ? ' · Locked in Canvas' : ''}${item.dueAt ? ` · Due ${e(format(item.dueAt, course.timeZone))}` : ''}${item.unlockAt ? ` · Opens ${e(format(item.unlockAt, course.timeZone))}` : ''}</p></li>`;
+  const resource = item => `<li class="canvas-resource">${link(item.url, item.title)}<p class="meta">${e(item.type)}${item.locked ? ' · Locked in Canvas' : ''}${item.dueAt ? ` · Due ${e(format(item.dueAt, course.timeZone))}` : ''}${item.unlockAt ? ` · Opens ${e(format(item.unlockAt, course.timeZone))}` : ''}</p>${section === 'assignments' && data.mode === 'live' ? `<a class="button" href="/submit.html?course=${encodeURIComponent(courseId)}&amp;assignment=${encodeURIComponent(item.id)}">Prepare submission</a>` : ''}</li>`;
   let body;
   if (section === 'grades') body = gradesView(record, data.grades?.[courseId], busy);
   else if (section === 'resources') body = publicResourcesView(course.name);

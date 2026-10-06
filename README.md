@@ -1,6 +1,6 @@
 # Study Commons
 
-A school course hub with a private, read-only Canvas backend. Plain HTML, CSS, JavaScript and Node.js. Local storage uses SQLite; Vercel deployments use private Blob storage.
+A school course hub with private Canvas imports and reviewed assignment submissions. Plain HTML, CSS, JavaScript and Node.js. Local storage uses SQLite; Vercel deployments use private Blob storage.
 
 The Canvas pilot discovers your available and completed courses and adds them to a private dashboard with their original modules and resource links. It works with fictional fixtures or your own Canvas account. A private pilot login protects synced content. The general school catalog remains public example content. Hub discussions, example dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
 
@@ -57,8 +57,14 @@ Official references: [Replit Secrets](https://docs.replit.com/core-concepts/proj
 - Replaces successfully fetched categories to reflect changes/deletions. Temporary category failures retain older data with an explicit warning. A 403/404 clears that inaccessible category; failed discovery or a rejected token preserves the previous account snapshot and reports an error.
 - Uses pagination with same-origin, same-endpoint checks, bounded responses and timeouts.
 - Keeps imported content behind an HttpOnly session cookie. Mutations require a matching `APP_ORIGIN`.
-- Omits grades, submissions, rosters, event descriptions, and appointment reservations.
-- Makes **GET requests only** to Canvas. Sync and mapping changes write only to the hub's database.
+- Imports omit grades, submission bodies, rosters, event descriptions, and appointment reservations. All displayed grades are fictional samples.
+- Sync makes **GET requests only** to Canvas. Assignment submission is a separate, explicitly confirmed action described below.
+
+## Submit work to Canvas
+
+Open a private course → **Assignments** → **Prepare submission**. Read the original assignment instructions, choose an allowed text, URL, or file submission, then review it. Only **Submit to Canvas** sends the work. This uses the connected personal token owner's account; it is not a shared student submission service.
+
+The pilot supports one file up to 3 MiB. Group assignments, quizzes, external tools, integrity agreements, and larger/multiple uploads open in Canvas. Live availability and attempt limits are checked before sending. A receipt confirms the attempt and timestamp; uncertain delivery is never retried automatically. See [submission behavior and limitations](docs/canvas-submissions.md).
 
 A new Canvas token gets a separate local cache so one account cannot inherit another account's saved data. Re-link units after rotating a token. Old snapshots remain in the ignored database; remove the database while the app is stopped if you need to erase all pilot data.
 
@@ -86,6 +92,7 @@ Or run `node scripts/check.js` and `node --test` directly. Tests use synthetic C
 - `server.js` — HTTP server, public asset allowlist, private API routing.
 - `lib/config.js` — environment configuration and validation.
 - `lib/canvas.js` — read-only Canvas client and fictional fixture adapter.
+- `lib/submissions.js` — current assignment eligibility, reviewed submissions, file uploads and receipts.
 - `lib/store.js` — SQLite snapshot storage.
 - `lib/api.js` — login, sessions, sync and unit mappings.
 - `public/canvas.js` — private connection screen, sync progress and legacy unit links.

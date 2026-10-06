@@ -4,12 +4,12 @@ import { courseNames } from './course-names.js';
 const link = (url, label) => safeUrl(url) ? `<a href="${e(safeUrl(url))}" target="_blank" rel="noopener noreferrer">${e(label)} ↗</a>` : e(label);
 const percent = value => typeof value === 'number' && Number.isFinite(value) ? `${Math.round(value * 10) / 10}%` : 'Not provided';
 export function gradeLabel(grades) {
-  if (!grades || grades.status !== 'synced') return 'Grade not available';
-  return `${percent(grades.currentScore)}${grades.currentGrade ? ` · ${grades.currentGrade}` : ''}`;
+  if (!grades?.isDemo) return 'Sample grade not available';
+  return `Sample ${percent(grades.currentScore)}${grades.currentGrade ? ` · ${grades.currentGrade}` : ''}`;
 }
 export function studyPriorities(name, grades) {
   const available = topics.filter(topic => topic.subject === subjectFor(name));
-  const assignments = grades?.status === 'synced' ? grades.assignments || [] : [];
+  const assignments = ['synced', 'demo'].includes(grades?.status) ? grades.assignments || [] : [];
   return available.map(topic => {
     // A multi-topic assignment cannot isolate which skill caused a low score.
     const evidence = assignments.filter(item => !item.missing && !item.late && !item.excused && !item.excluded && item.currentAttempt !== false &&
@@ -55,21 +55,18 @@ export function publicResourcesView(name) {
     ${pastPapersView(name)}${resources.length ? `<ul class="canvas-resource-list">${resources.map(item => `<li>${link(item.url, item.title)}<p class="meta">${e(item.source)} · ${e(item.rights)}</p></li>`).join('')}</ul>` : '<p>No subject-specific textbook links have been curated yet.</p>'}</section>`;
 }
 export function gradesView(record, grades, busy) {
+  grades = grades?.isDemo ? grades : null;
   const priorities = studyPriorities(record.course.name, grades);
   const review = priorities.filter(topic => topic.review);
   const assignments = grades?.assignments || [];
-  const missing = assignments.filter(item => item.missing && !item.excused);
-  return `<section class="canvas-panel"><div class="section-heading"><h2>Your grades & study plan</h2>
-    <form data-canvas-form="grades" data-course="${e(record.course.id)}"><button class="primary" ${busy ? 'disabled' : ''}>${busy ? 'Refreshing…' : 'Refresh my grades'}</button></form></div>
-    <p class="eyebrow">Private · Canvas account owner only</p>
-    ${!grades ? '<p>Refresh your grades to import your own posted scores from Canvas.</p>' : grades.status !== 'synced' ? `<p class="canvas-alert">${e(grades.message || 'Canvas grades are unavailable.')}</p>` : `
-    <div class="grade-summary"><div><span class="meta">Canvas current grade · whole course</span><p class="grade-value">${e(gradeLabel(grades))}</p></div><div><span class="meta">Canvas final score · may include ungraded work as zero</span><p>${e(percent(grades.finalScore))}${grades.finalGrade ? ` · ${e(grades.finalGrade)}` : ''}</p></div></div>
-    <p class="meta">${link(grades.url, 'Verify in Canvas Grades')} · Imported ${e(new Date(grades.syncedAt).toLocaleString())}. Refresh separately from course materials. Historical courses retain historical grades. Canvas totals are used directly; this hub does not recalculate weighting or grading-period totals.</p>`}
-    <h3>Where to focus</h3><p class="muted">A review signal means the average of up to five latest eligible assignments explicitly naming one supported topic is below 80%. It is a practice suggestion, not a mastery score. Missing, late, excused, unposted, superseded and non-counting work are excluded.</p>
-    ${review.length ? review.map(topic => `<article class="canvas-record"><h3>${e(topic.title)} <span class="badge">${topic.evidence.length === 1 ? 'Tentative · one assignment' : 'Review signal'}</span></h3><p>${e(percent(topic.average))} average across ${topic.evidence.length} matched assignment${topic.evidence.length === 1 ? '' : 's'}. Suggested practice increased from 2 to 6 problems.</p><ul>${topic.evidence.map(item => `<li>${link(item.url, item.title)} · ${e(item.score)} / ${e(item.pointsPossible)}</li>`).join('')}</ul></article>`).join('') : '<p class="empty-inline">No supported topic has enough matching low-score evidence to suggest extra practice. This does not mean every topic is mastered. Numbered assignments, broad unit tests and quiz-level totals cannot reliably identify a specific weak skill.</p>'}
-    <p class="meta">Automatic topic matching currently covers four calculus topics and three chemistry topics. You can choose any practice section below even without a grade signal.</p>
-    ${missing.length ? `<details class="canvas-alert"><summary>${missing.length} missing assignments · check with your teacher</summary><p>Missing work is a completion issue, not evidence of a weak topic.</p><ul>${missing.map(item => `<li>${link(item.url, item.title)}</li>`).join('')}</ul></details>` : ''}
-    <h3>Choose focused practice</h3>${priorities.length ? priorities.map(practice).join('') : '<p>Use the subject library below for reading and practice. Topic-level recommendations for this subject are not yet available.</p>'}
-    ${assignments.length ? `<details class="grade-list"><summary>Assignment grades (${assignments.length})</summary><div class="table-scroll"><table><thead><tr><th>Assignment</th><th>Posted score</th><th>Status</th></tr></thead><tbody>${assignments.map(item => `<tr><td>${link(item.url, item.title)}</td><td>${item.score === null ? 'Not provided' : `${e(item.score)} / ${e(item.pointsPossible ?? '—')}`}</td><td>${e([item.excused ? 'Excused' : '', item.missing ? 'Missing' : '', item.late ? 'Late' : '', item.excluded ? 'Not counted' : '', item.currentAttempt === false ? 'Previous attempt' : ''].filter(Boolean).join(' · ') || (item.score === null ? 'No posted numeric grade' : 'Posted'))}</td></tr>`).join('')}</tbody></table></div></details>` : ''}
+  return `<section class="canvas-panel"><div class="section-heading"><h2>Sample grades & study plan</h2>
+    <form data-canvas-form="grades" data-course="${e(record.course.id)}"><button ${busy ? 'disabled' : ''}>${busy ? 'Resetting…' : 'Reset sample grades'}</button></form></div>
+    <p class="canvas-alert"><strong>Demo grades — not your actual results.</strong> Your course, assignment names and class materials are real. Every score and point total shown here is fictional, including the course average. Study recommendations below illustrate how the feature works; they do not describe your performance.</p>
+    ${grades ? `<div class="grade-summary"><div><span class="meta">Illustrative course grade</span><p class="grade-value">${e(gradeLabel(grades))}</p></div></div><p class="meta">Sample assignment scores use an invented 100-point scale. No grades are requested from Canvas.</p>` : '<p>Sample grades are not loaded yet.</p>'}
+    <h3>Example study priorities</h3><p class="muted">A sample average below 80% on a supported topic suggests six practice problems instead of two. This is an example, not a mastery score.</p>
+    ${review.length ? review.map(topic => `<article class="canvas-record"><h3>${e(topic.title)} <span class="badge">Demo recommendation</span></h3><p>${e(percent(topic.average))} sample average across ${topic.evidence.length} matching assignment${topic.evidence.length === 1 ? '' : 's'}. Try six problems to demonstrate targeted practice.</p><ul>${topic.evidence.map(item => `<li>${link(item.url, item.title)} · Sample: ${e(item.score)} / ${e(item.pointsPossible)}</li>`).join('')}</ul></article>`).join('') : '<p>No supported topic matches a low sample score in these assignment titles. Choose practice below. The app does not invent topics for broadly named or numbered assignments.</p>'}
+    <p class="meta">Topic matching supports four calculus topics and three chemistry topics. All recommendations on this screen use fictional scores.</p>
+    <h3>Choose focused practice</h3>${priorities.length ? priorities.map(practice).join('') : '<p>Use the subject library below for reading and practice.</p>'}
+    ${assignments.length ? `<details class="grade-list"><summary>Real assignments with sample grades (${assignments.length})</summary><div class="table-scroll"><table><thead><tr><th>Canvas assignment</th><th>Fictional score</th><th>Data type</th></tr></thead><tbody>${assignments.map(item => `<tr><td>${link(item.url, item.title)}</td><td>${e(item.score)} / ${e(item.pointsPossible)}</td><td>Demo only</td></tr>`).join('')}</tbody></table></div></details>` : '<p>No accessible assignments were returned for this course. The course grade above is a standalone sample.</p>'}
     </section>${publicResourcesView(record.course.name)}`;
 }
