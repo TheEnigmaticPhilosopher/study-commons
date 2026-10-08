@@ -2,7 +2,7 @@
 
 Deployment: [study-commons-pilot.vercel.app](https://study-commons-pilot.vercel.app/#canvas). Imported courses require the existing personal pilot password.
 
-The public example library contains no imported Canvas data. Sign in with the personal pilot password to see your actual courses. The separate SALTY connector remains disabled until explicitly configured.
+The public library contains approved course names and curated publisher links. Sign in with the personal pilot password to see private Canvas class metadata and original material links. Displayed grades are fictional samples. The separate SALTY connector remains disabled until explicitly configured.
 
 ## Setup
 
@@ -37,6 +37,8 @@ To run or resume the same hosted import from a privately configured checkout, us
 Snapshots, teaching links, progress, login throttling, and sessions use private Blob storage. Conditional writes prevent concurrent requests from losing updates. Sign-in survives new server instances. Logout revokes the session; sessions expire after eight hours. Rotating the password or Canvas token invalidates previous sessions. A changed Canvas token starts a separate account cache.
 
 Imports include accessible resource metadata and original links, without downloading files, page bodies, grades, submissions, or rosters. Canvas permission errors appear as category warnings. Deadlines and module unlock dates do not establish a teaching week; link actual teaching events explicitly.
+
+Assignment submissions are a separate confirmed action: open a course's Assignments tab and select Prepare submission. The live editor supports text, website URLs and one file up to 3 MiB; unsupported workflows open in Canvas. See [Canvas submission behavior](canvas-submissions.md). Only allow the token owner to use this personal pilot.
 
 `.vercelignore` excludes every `.env` file, SQLite databases, local data, logs, archives, and local tooling. `.gitignore` excludes private `.env` files and database state. Never deploy with Vercel's `--public` source option. The app serves only explicitly allowed public assets; the private API requires login.
 

@@ -2,7 +2,7 @@
 
 A school course hub with private Canvas imports and reviewed assignment submissions. Plain HTML, CSS, JavaScript and Node.js. Local storage uses SQLite; Vercel deployments use private Blob storage.
 
-The Canvas pilot discovers your available and completed courses and adds them to a private dashboard with their original modules and resource links. It works with fictional fixtures or your own Canvas account. A private pilot login protects synced content. The general school catalog remains public example content. Hub discussions, example dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
+The Canvas pilot discovers your available and completed courses and adds them to a private dashboard with their original modules and resource links. It works with fictional fixtures or your own Canvas account. A private pilot login protects synced content. The public library contains 46 approved course names and curated publisher links; imported class materials stay private. All displayed grades and grade-based practice recommendations are fictional examples. Hub discussions, public dashboard selections and pending resource suggestions still use browser-local storage; they are not shared between students.
 
 ## Run locally
 
@@ -74,7 +74,7 @@ Study Commons can remain separate while a future SALTY backend links to its save
 
 ## Customize the school library
 
-Edit `public/data.js`: school name, catalog, units, resources and example discussions. AP Chemistry has nine units; other subjects can use different structures. Resource entries support a URL or short inline text, plus creator/source and unit ID. The catalog is illustrative, not a verified list of your school's courses.
+Edit `public/data.js` for school settings, `public/course-names.js` for approved public names, and `public/library.js` for curated units and resources. AP Chemistry has nine units; other subjects can use different structures. The catalog includes historical sections and is not a verified current school offering list. New imports do not automatically publish course names or private materials.
 
 Edit `public/styles.css` for appearance. Add new public files to the explicit asset allowlist in `server.js`. Never add configuration files or database paths to that allowlist.
 
